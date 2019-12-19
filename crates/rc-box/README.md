@@ -1,9 +1,11 @@
-# Pointer utility crates
+Known unique versions of `Rc` and `Arc`.
+This allows them to be used for mutable ownership.
 
-- [`erasable`](crates/erasable): Erase pointers of their concrete type.
-- [`rc-borrow`](crates/rc-borrow): Borrowed forms of `Rc` and `Arc`.
-- [`rc-box`](crates/rc-box): Known unique forms of `Rc` and `Arc`.
-- [`ptr-union`](crates/ptr-union): Pointer unions the size of a pointer.
+The main reason to use `RcBox` or `ArcBox` is for types that will be reference counted,
+but need some "fixing up" done after being allocated behind the reference counted pointer.
+With the standard library types, you would use `get_mut` and have to handle the impossible
+case where the value was shared. With the known unique versions, you have `DerefMut`,
+so it's as simple as mutating behind a `Box`.
 
 ## Why not [triomphe](https://crates.io/crates/triomphe)?
 
@@ -19,7 +21,13 @@ If you want small, self-contained extensions to the standard library types,
 use these pointer utilities.
 
 Additionally, triomphe only supports atomic reference counting.
-We provide support for both `Arc` and `Rc`, as well as `Box` where applicable.
+We provide support for both `Arc` and `Rc`.
+
+## Related Crates
+
+- [`erasable`](https://lib.rs/crates/erasable): Erase pointers of their concrete type.
+- [`ptr-union`](https://lib.rs/crates/ptr-union): Pointer unions the size of a pointer.
+- [`rc-borrow`](https://lib.rs/crates/rc-borrow): Borrowed forms of `Rc` and `Arc`.
 
 ## Minimum Supported Rust Version
 
@@ -34,9 +42,9 @@ not patch version bumps, and will be deliberate and clearly noted in change note
 Licensed under either of
 
  * Apache License, Version 2.0
-   ([LICENSE/APACHE](LICENSE/APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
+   ([LICENSE/APACHE](../../LICENSE/APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
  * MIT license
-   ([LICENSE/MIT](LICENSE/MIT) or http://opensource.org/licenses/MIT)
+   ([LICENSE/MIT](../../LICENSE/MIT) or http://opensource.org/licenses/MIT)
 
 at your option.
 
@@ -52,4 +60,3 @@ disrespect for the very human rights they claim to fight for.
 Unless you explicitly state otherwise, any contribution intentionally submitted
 for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
 dual licensed as above, without any additional terms or conditions.
-

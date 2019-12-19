@@ -4,6 +4,15 @@ version = "1.0.0-dev"
 edition = "2018"
 
 authors = ["Christopher Durham (cad97) <cad97@cad97.com>"]
+description = "Type-erased thin pointers."
+repository = "https://github.com/CAD97/pointer-utils/tree/master/crates/erasable"
+readme = "README.md"
+keywords = ["thin","pointer","type","erasure"]
+categories = ["data-structures","no-std","rust-patterns"]
+license = "MIT OR APACHE-2.0"
+
+[badges]
+maintenance = { status = "passively-maintained" }
 
 [features]
 default = ["alloc"]
