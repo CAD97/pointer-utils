@@ -1,0 +1,17 @@
+[package]
+name = "ptr-union"
+version = "1.0.0-dev"
+edition = "2018"
+
+authors = ["Christopher Durham (cad97) <cad97@cad97.com>"]
+
+[dependencies]
+paste = "0.1.6"
+
+[dependencies.erasable]
+version = "1.0.0-dev"
+path = "../erasable"
+
+[features]
+default = ["alloc"]
+alloc = ["erasable/alloc"]

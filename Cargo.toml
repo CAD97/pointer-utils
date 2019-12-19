@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "crates/erasable",
+    "crates/ptr-union",
+    "crates/rc-borrow",
+    "crates/rc-box",
+]
