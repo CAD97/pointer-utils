@@ -1,3 +1,6 @@
+cut-body-after = "---"
+delete-merged-branches = true
+
 status = [
   "Tests",
   "Rustfmt",
