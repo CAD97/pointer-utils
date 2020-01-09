@@ -471,7 +471,9 @@ unsafe fn erase_lt<'a, 'b, T: ?Sized>(r: &'a T) -> &'b T {
     mem::transmute(r)
 }
 
+#[cfg(not(has_never))]
 use priv_in_pub::NeverPtr;
+#[cfg(not(has_never))]
 mod priv_in_pub {
     use super::*;
 
@@ -486,6 +488,8 @@ mod priv_in_pub {
         }
     }
 }
+#[cfg(has_never)]
+pub type NeverPtr = !;
 
 /// An unpacked version of [`Union2`].
 #[allow(missing_docs)]

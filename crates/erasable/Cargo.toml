@@ -22,3 +22,6 @@ alloc = []
 # Requires feature(weak_into_raw) and for it to support ?Sized types.
 # This is not the case as of nightly-2019-12-17.
 unstable_weak_into_raw = []
+
+[build-dependencies]
+autocfg = "1.0.0"
