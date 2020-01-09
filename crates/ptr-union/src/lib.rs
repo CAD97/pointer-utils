@@ -52,9 +52,22 @@ fn unmask(ptr: ErasedPtr, mask: usize, value: usize) -> ErasedPtr {
 /// For that, you get all of the unsafe pointer-wrangling for pointer-sized pointer unions.
 ///
 /// In the future, with sufficiently advanced const generics, it might be possible to avoid this.
-#[derive(Copy, Clone, Debug)]
 pub struct UnionBuilder<U> {
     private: PhantomData<U>,
+}
+
+impl<U> Copy for UnionBuilder<U> {}
+impl<U> Clone for UnionBuilder<U> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl<U> fmt::Debug for UnionBuilder<U> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("UnionBuilder")
+            .field(&format_args!("{}", core::any::type_name::<U>()))
+            .finish()
+    }
 }
 
 impl<A, B> UnionBuilder<Union2<A, B>> {
@@ -160,7 +173,7 @@ pub struct Union4<A, B, C, D = NeverPtr> {
 
 #[allow(missing_docs)]
 impl<A: ErasablePtr, B: ErasablePtr> UnionBuilder<Union2<A, B>> {
-    pub fn a(&self, a: A) -> Union2<A, B> {
+    pub fn a(self, a: A) -> Union2<A, B> {
         Union2 {
             raw: mask(A::erase(a), MASK_2, MASK_A),
             a: PhantomData,
@@ -168,7 +181,7 @@ impl<A: ErasablePtr, B: ErasablePtr> UnionBuilder<Union2<A, B>> {
         }
     }
 
-    pub fn b(&self, b: B) -> Union2<A, B> {
+    pub fn b(self, b: B) -> Union2<A, B> {
         Union2 {
             raw: mask(B::erase(b), MASK_2, MASK_B),
             a: PhantomData,
@@ -181,7 +194,7 @@ impl<A: ErasablePtr, B: ErasablePtr> UnionBuilder<Union2<A, B>> {
 impl<A: ErasablePtr, B: ErasablePtr, C: ErasablePtr, D: ErasablePtr>
     UnionBuilder<Union4<A, B, C, D>>
 {
-    pub fn a(&self, a: A) -> Union4<A, B, C, D> {
+    pub fn a(self, a: A) -> Union4<A, B, C, D> {
         Union4 {
             raw: mask(A::erase(a), MASK_4, MASK_A),
             a: PhantomData,
@@ -191,7 +204,7 @@ impl<A: ErasablePtr, B: ErasablePtr, C: ErasablePtr, D: ErasablePtr>
         }
     }
 
-    pub fn b(&self, b: B) -> Union4<A, B, C, D> {
+    pub fn b(self, b: B) -> Union4<A, B, C, D> {
         Union4 {
             raw: mask(B::erase(b), MASK_4, MASK_B),
             a: PhantomData,
@@ -201,7 +214,7 @@ impl<A: ErasablePtr, B: ErasablePtr, C: ErasablePtr, D: ErasablePtr>
         }
     }
 
-    pub fn c(&self, c: C) -> Union4<A, B, C, D> {
+    pub fn c(self, c: C) -> Union4<A, B, C, D> {
         Union4 {
             raw: mask(C::erase(c), MASK_4, MASK_C),
             a: PhantomData,
@@ -211,7 +224,7 @@ impl<A: ErasablePtr, B: ErasablePtr, C: ErasablePtr, D: ErasablePtr>
         }
     }
 
-    pub fn d(&self, d: D) -> Union4<A, B, C, D> {
+    pub fn d(self, d: D) -> Union4<A, B, C, D> {
         Union4 {
             raw: mask(D::erase(d), MASK_4, MASK_D),
             a: PhantomData,
