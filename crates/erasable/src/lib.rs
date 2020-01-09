@@ -30,7 +30,7 @@ use core::{
     fmt::{self, Debug, Display, Formatter, Pointer},
     future::Future,
     hash::{Hash, Hasher},
-    iter::FusedIterator,
+    iter::{FromIterator, FusedIterator},
     marker::PhantomData,
     mem::ManuallyDrop,
     ops::{Deref, DerefMut},
@@ -49,12 +49,17 @@ use core::{
 /// When `Erased` becomes an extern type, it will properly have unknown size and align.
 pub type ErasedPtr = ptr::NonNull<Erased>;
 
-use core::iter::FromIterator;
-use core::ptr::NonNull;
+#[cfg(not(has_extern_type))]
 pub(crate) use priv_in_pub::Erased;
 
+#[cfg(not(has_extern_type))]
 mod priv_in_pub {
     pub struct Erased; // extern type Erased
+}
+
+#[cfg(has_extern_type)]
+extern "Rust" {
+    pub type Erased;
 }
 
 /// A (smart) pointer type that can be type-erased (making a thin pointer).
@@ -504,11 +509,11 @@ unsafe impl<P> ErasablePtr for Pin<P>
 where
     P: ErasablePtr + Deref,
 {
-    fn erase(this: Self) -> NonNull<Erased> {
+    fn erase(this: Self) -> ptr::NonNull<Erased> {
         unsafe { P::erase(Pin::into_inner_unchecked(this)) }
     }
 
-    unsafe fn unerase(this: NonNull<Erased>) -> Self {
+    unsafe fn unerase(this: ptr::NonNull<Erased>) -> Self {
         Pin::new_unchecked(P::unerase(this))
     }
 }
@@ -543,6 +548,22 @@ impl_erasable!(for<T>
     #[cfg(feature = "unstable_weak_into_raw")]
     rc::Weak<T>,
 );
+
+#[cfg(has_never)]
+unsafe impl ErasablePtr for ! {
+    fn erase(this: !) -> ErasedPtr {
+        this
+    }
+    #[rustfmt::skip]
+    unsafe fn unerase(_this: ErasedPtr) -> Self {
+        #[cfg(debug_assertions)] {
+            panic!("attempted to unerase erased pointer to !")
+        }
+        #[cfg(not(debug_assertions))] {
+            core::hint::unreachable_unchecked()
+        }
+    }
+}
 
 unsafe fn erase_lt<'a, 'b, T: ?Sized>(this: &'a T) -> &'b T {
     &*(this as *const T)

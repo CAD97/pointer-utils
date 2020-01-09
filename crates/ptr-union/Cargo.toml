@@ -24,3 +24,6 @@ path = "../erasable"
 [features]
 default = ["alloc"]
 alloc = ["erasable/alloc"]
+
+[build-dependencies]
+autocfg = "1.0.0"
