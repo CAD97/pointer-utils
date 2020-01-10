@@ -9,7 +9,7 @@
 //! case where the value was shared. With the known unique versions, you have [`DerefMut`],
 //! so it's as simple as mutating behind a [`Box`].
 
-#![allow(clippy::missing_safety_doc)]
+#![warn(missing_docs, missing_debug_implementations)]
 #![no_std]
 
 extern crate alloc;
@@ -237,68 +237,53 @@ stringify!($RcBox), "`, using [`", stringify!($RcBox), "::from_raw`]."),
                 }
             }
 
-            pub fn leak<'a>(this: Self) -> &'a mut T
-            where
-                T: 'a,
-            {
-                unsafe { &mut *$RcBox::into_raw(this).as_ptr() }
+            doc_comment! {
+                concat!("Consume and leak the `", stringify!($RcBox), "."),
+                pub fn leak<'a>(this: Self) -> &'a mut T
+                where
+                    T: 'a,
+                {
+                    unsafe { &mut *$RcBox::into_raw(this).as_ptr() }
+                }
             }
 
-            #[deprecated(note = "Use DerefMut instead")]
-            pub fn make_mut(this: &mut Self) -> &mut T {
-                &mut **this
-            }
-
-            pub fn new(data: T) -> Self
-            where
-                T: Sized,
-            {
-                unsafe { $RcBox::from_unchecked($Rc::new(data)) }
+            doc_comment! {
+                concat!("Create a new ", stringify!($RcBox), "."),
+                pub fn new(data: T) -> Self
+                where
+                    T: Sized,
+                {
+                    unsafe { $RcBox::from_unchecked($Rc::new(data)) }
+                }
             }
 
             // `new_uninit`/`new_uninit_slice` are unstable but probably desirable.
 
-            pub fn pin(x: T) -> Pin<$RcBox<T>>
-            where
-                T: Sized,
-            {
-                unsafe {
-                    Pin::new_unchecked($RcBox::from_unchecked(
-                        Pin::into_inner_unchecked($Rc::pin(x))
-                    ))
+            doc_comment! {
+                concat!("\
+Construct a new `Pin<", stringify!($RcBox), "<T>>`. If `T` does not implement [`Unpin`],\
+then the data will be pinned in memory and unable to be moved."),
+                pub fn pin(x: T) -> Pin<$RcBox<T>>
+                where
+                    T: Sized,
+                {
+                    unsafe {
+                        Pin::new_unchecked($RcBox::from_unchecked(
+                            Pin::into_inner_unchecked($Rc::pin(x))
+                        ))
+                    }
                 }
             }
 
-            // NB: I'd love to make _other accept `$Rc<T>` as well
-            #[deprecated(note = "Always false")]
-            pub fn ptr_eq(_this: &Self, _other: &Self) -> bool {
-                false
-            }
-
-            #[deprecated(note = "Always 1")]
-            pub fn strong_count(_: &Self) -> usize {
-                1
-            }
-
-            #[deprecated(note = "Use `ArcBox::into_inner` instead")]
-            pub fn try_unwrap(this: Self) -> Result<T, Self>
-            where
-                T: Sized,
-            {
-                Ok($RcBox::into_inner(this))
-            }
-
-            pub fn into_inner(this: Self) -> T
-            where
-                T: Sized,
-            {
-                let rc: $Rc<T> = this.into();
-                $Rc::try_unwrap(rc).unwrap_or_else(|_| unsafe { unreachable_unchecked() })
-            }
-
-            #[deprecated(note = "Always 0")]
-            pub fn weak_count(_: &Self) -> usize {
-                0
+            doc_comment! {
+                concat!("Deconstruct this `", stringify!($RcBox), "`, returning the inner value."),
+                pub fn into_inner(this: Self) -> T
+                where
+                    T: Sized,
+                {
+                    let rc: $Rc<T> = this.into();
+                    $Rc::try_unwrap(rc).unwrap_or_else(|_| unsafe { unreachable_unchecked() })
+                }
             }
         }
 
