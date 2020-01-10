@@ -19,7 +19,9 @@
 //! use_resource(&borrowed);
 //! ```
 
+#![warn(missing_docs, missing_debug_implementations)]
 #![no_std]
+
 extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
@@ -49,6 +51,58 @@ use {
     },
 };
 
+/// This trait is a polyfill for (`A`)`Rc::as_raw` and (`A`)`Rc::clone_raw`.
+/// See https://internals.rust-lang.org/t/_/11463/11 for why these are important.
+/// By using a trait here, we can more easily switch when these functions are available.
+trait RawRc<T: ?Sized> {
+    fn as_raw(this: &Self) -> *const T;
+    unsafe fn clone_raw(this: *const T) -> Self;
+}
+
+impl<T: ?Sized> RawRc<T> for Arc<T> {
+    #[rustfmt::skip]
+    fn as_raw(this: &Self) -> *const T {
+        #[cfg(not(has_Arc__as_raw))] {
+            &**this
+        }
+        #[cfg(has_Arc__as_raw)] {
+            Arc::as_raw(this)
+        }
+    }
+
+    #[rustfmt::skip]
+    unsafe fn clone_raw(this: *const T) -> Self {
+        #[cfg(not(has_Arc__clone_raw))] {
+            Arc::clone(&ManuallyDrop::new(Arc::from_raw(this)))
+        }
+        #[cfg(has_Arc__clone_raw)] {
+            Arc::clone_raw(this)
+        }
+    }
+}
+
+impl<T: ?Sized> RawRc<T> for Rc<T> {
+    #[rustfmt::skip]
+    fn as_raw(this: &Self) -> *const T {
+        #[cfg(not(has_Rc__as_raw))] {
+            &**this
+        }
+        #[cfg(has_Rc__as_raw)] {
+            Rc::as_raw(this)
+        }
+    }
+
+    #[rustfmt::skip]
+    unsafe fn clone_raw(this: *const T) -> Self {
+        #[cfg(not(has_Rc__clone_raw))] {
+            Rc::clone(&ManuallyDrop::new(Rc::from_raw(this)))
+        }
+        #[cfg(has_Rc__clone_raw)] {
+            Rc::clone_raw(this)
+        }
+    }
+}
+
 macro_rules! rc_borrow {
     ($($(#[$m:meta])* $RcBorrow:ident = $Rc:ident)*) => {$(
         $(#[$m])*
@@ -63,10 +117,9 @@ macro_rules! rc_borrow {
 
         impl<'a, T: ?Sized> From<&'a $Rc<T>> for $RcBorrow<'a, T> {
             fn from(v: &'a $Rc<T>) -> $RcBorrow<'a, T> {
+                let raw = <$Rc<T> as RawRc<T>>::as_raw(v);
                 $RcBorrow {
-                    // FIXME: This should be $Rc::as_raw(v) as soon as possible
-                    //  @see: https://internals.rust-lang.org/t/_/11463/11
-                    raw: (&**v).into(),
+                    raw: unsafe { ptr::NonNull::new_unchecked(raw as *mut T) },
                     marker: PhantomData,
                 }
             }
@@ -75,7 +128,7 @@ macro_rules! rc_borrow {
         impl<'a, T: ?Sized> $RcBorrow<'a, T> {
             /// Convert this borrowed pointer into an owned pointer.
             pub fn upgrade(this: Self) -> $Rc<T> {
-                unsafe { $Rc::clone(&ManuallyDrop::new($Rc::from_raw(this.raw.as_ptr()))) }
+                unsafe { <$Rc<T> as RawRc<T>>::clone_raw(this.raw.as_ptr()) }
             }
 
             /// Convert this borrowed pointer into a standard reference.

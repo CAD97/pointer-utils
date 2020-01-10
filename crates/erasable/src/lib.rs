@@ -3,7 +3,7 @@
 
 //! Erase pointers of their concrete type and store type-erased pointers.
 //!
-//! This is roughly equivalent to C's `void*`, but it does not use `libc::c_void`.
+//! This is roughly equivalent to C's `void*`.
 //!
 //! There are two main useful reasons to type erase pointers in Rust:
 //!
@@ -17,8 +17,8 @@
 //!   and the fat pointer can be recovered from the inline metadata.
 //!   We provide the [`Thin`] wrapper type to provide thin pointer types.
 
+#![warn(missing_docs, missing_debug_implementations)]
 #![no_std]
-#![cfg_attr(feature = "unstable_weak_into_raw", feature(weak_into_raw))]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
@@ -54,11 +54,15 @@ pub(crate) use priv_in_pub::Erased;
 
 #[cfg(not(has_extern_type))]
 mod priv_in_pub {
+    /// An erased type.
+    #[allow(missing_debug_implementations)]
     pub struct Erased; // extern type Erased
 }
 
 #[cfg(has_extern_type)]
 extern "Rust" {
+    /// An erased type. Has unknown size and alignment.
+    #[allow(missing_debug_implementations)]
     pub type Erased;
 }
 
@@ -542,10 +546,10 @@ macro_rules! impl_erasable {
 impl_erasable!(for<T>
     Box<T>,
     sync::Arc<T>,
-    #[cfg(feature = "unstable_weak_into_raw")]
+    #[cfg(has_Weak__into_raw)]
     sync::Weak<T>,
     rc::Rc<T>,
-    #[cfg(feature = "unstable_weak_into_raw")]
+    #[cfg(has_Weak__into_raw)]
     rc::Weak<T>,
 );
 
