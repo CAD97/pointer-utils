@@ -71,6 +71,7 @@ dependencies = [
 name = "rc-borrow"
 version = "1.0.0-dev"
 dependencies = [
+ "autocfg 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "erasable 1.0.0-dev",
 ]
 

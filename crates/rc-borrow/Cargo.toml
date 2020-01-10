@@ -22,3 +22,6 @@ optional = true
 [features]
 default = ["erasable", "std"]
 std = []
+
+[build-dependencies]
+autocfg = "1.0.0"
