@@ -55,15 +55,19 @@ pub(crate) use priv_in_pub::Erased;
 #[cfg(not(has_extern_type))]
 mod priv_in_pub {
     /// An erased type.
-    #[allow(missing_debug_implementations)]
     pub struct Erased; // extern type Erased
 }
 
 #[cfg(has_extern_type)]
 extern "Rust" {
     /// An erased type. Has unknown size and alignment.
-    #[allow(missing_debug_implementations)]
     pub type Erased;
+}
+
+impl Debug for Erased {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Erased").finish()
+    }
 }
 
 /// A (smart) pointer type that can be type-erased (making a thin pointer).

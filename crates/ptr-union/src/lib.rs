@@ -171,8 +171,8 @@ pub struct Union4<A, B, C, D = NeverPtr> {
     d: PhantomData<D>,
 }
 
-#[allow(missing_docs)]
 impl<A: ErasablePtr, B: ErasablePtr> UnionBuilder<Union2<A, B>> {
+    /// Construct a union at this variant.
     pub fn a(self, a: A) -> Union2<A, B> {
         Union2 {
             raw: mask(A::erase(a), MASK_2, MASK_A),
@@ -181,6 +181,7 @@ impl<A: ErasablePtr, B: ErasablePtr> UnionBuilder<Union2<A, B>> {
         }
     }
 
+    /// Construct a union at this variant.
     pub fn b(self, b: B) -> Union2<A, B> {
         Union2 {
             raw: mask(B::erase(b), MASK_2, MASK_B),
@@ -190,10 +191,10 @@ impl<A: ErasablePtr, B: ErasablePtr> UnionBuilder<Union2<A, B>> {
     }
 }
 
-#[allow(missing_docs)]
 impl<A: ErasablePtr, B: ErasablePtr, C: ErasablePtr, D: ErasablePtr>
     UnionBuilder<Union4<A, B, C, D>>
 {
+    /// Construct a union at this variant.
     pub fn a(self, a: A) -> Union4<A, B, C, D> {
         Union4 {
             raw: mask(A::erase(a), MASK_4, MASK_A),
@@ -204,6 +205,7 @@ impl<A: ErasablePtr, B: ErasablePtr, C: ErasablePtr, D: ErasablePtr>
         }
     }
 
+    /// Construct a union at this variant.
     pub fn b(self, b: B) -> Union4<A, B, C, D> {
         Union4 {
             raw: mask(B::erase(b), MASK_4, MASK_B),
@@ -214,6 +216,7 @@ impl<A: ErasablePtr, B: ErasablePtr, C: ErasablePtr, D: ErasablePtr>
         }
     }
 
+    /// Construct a union at this variant.
     pub fn c(self, c: C) -> Union4<A, B, C, D> {
         Union4 {
             raw: mask(C::erase(c), MASK_4, MASK_C),
@@ -224,6 +227,7 @@ impl<A: ErasablePtr, B: ErasablePtr, C: ErasablePtr, D: ErasablePtr>
         }
     }
 
+    /// Construct a union at this variant.
     pub fn d(self, d: D) -> Union4<A, B, C, D> {
         Union4 {
             raw: mask(D::erase(d), MASK_4, MASK_D),
