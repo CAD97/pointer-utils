@@ -54,6 +54,7 @@ where
 }
 
 pub unsafe trait AllocSliceDst<S: ?Sized + SliceDst> {
+    #[allow(clippy::missing_safety_doc)]
     unsafe fn new_slice_dst<I>(len: usize, init: I) -> Self
     where
         I: FnOnce(ptr::NonNull<S>);
