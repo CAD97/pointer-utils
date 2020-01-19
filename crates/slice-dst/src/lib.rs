@@ -145,13 +145,12 @@ where
 unsafe impl<Header, Item> Erasable for SliceWithHeader<Header, Item> {
     unsafe fn unerase(this: ErasedPtr) -> ptr::NonNull<Self> {
         #[cfg(not(has_ptr_slice_from_raw_parts))]
-        let slice_from_raw_parts = slice::from_raw_parts_mut;
+        let slice_from_raw_parts = slice::from_raw_parts_mut::<()>;
         #[cfg(has_ptr_slice_from_raw_parts)]
-        let slice_from_raw_parts = ptr::slice_from_raw_parts_mut;
+        let slice_from_raw_parts = ptr::slice_from_raw_parts_mut::<()>;
 
         let len: usize = ptr::read(this.as_ptr().cast());
-        let raw =
-            ptr::NonNull::new_unchecked(slice_from_raw_parts::<()>(this.as_ptr().cast(), len));
+        let raw = ptr::NonNull::new_unchecked(slice_from_raw_parts(this.as_ptr().cast(), len));
         Self::retype(raw)
     }
 }
