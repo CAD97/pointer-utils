@@ -38,6 +38,8 @@ use core::{
     ptr,
     task::{Context, Poll},
 };
+#[cfg(feature = "slice-dst")]
+use slice_dst::{SliceDst, SliceWithHeader};
 
 /// A thin, type-erased pointer.
 ///
@@ -139,9 +141,18 @@ pub unsafe trait Erasable {
 
     /// Unerase this erased pointer.
     ///
+    /// Note that this _must_ be sound for erasable pointer types
+    /// with both unique/write provenance and shared/read provenance.
+    /// (In other words, both `&mut _` and `&_` can be unerased with this.)
+    ///
+    /// Concretely, this means that the resulting pointer _must_ be derived
+    /// from the input pointer without any intervening references manifested.
+    /// Temporary shared references may be used in the implementation,
+    /// so long as the returned pointer is not derived from them.
+    ///
     /// # Safety
     ///
-    /// The erased pointer must have been created by `erase`.
+    /// The erased pointer must have been created by `erase`ing a valid pointer.
     unsafe fn unerase(this: ErasedPtr) -> ptr::NonNull<Self>;
 }
 
@@ -178,10 +189,13 @@ unsafe impl<P: ErasablePtr> Sync for Thin<P> where P: Sync {}
 
 impl<P: ErasablePtr> From<P> for Thin<P> {
     fn from(this: P) -> Self {
-        Thin {
+        let this = Thin::<P> {
             ptr: P::erase(this),
             marker: PhantomData,
-        }
+        };
+        Thin::inner(&this);
+        Thin::with(&this, |_| {});
+        this
     }
 }
 
@@ -263,13 +277,15 @@ where
     }
 }
 
+// TODO: SAFETY REVIEW: Is this (and DerefMut) impl actually sound?
+//       We're doing really questionable lifetime hacking.
 impl<P: ErasablePtr> Deref for Thin<P>
 where
     P: Deref,
 {
     type Target = P::Target;
     fn deref(&self) -> &P::Target {
-        unsafe { Thin::with(self, |p| erase_lt(p)) }
+        unsafe { Thin::with(self, |p| erase_lt(P::deref(p))) }
     }
 }
 
@@ -278,7 +294,7 @@ where
     P: DerefMut,
 {
     fn deref_mut(&mut self) -> &mut P::Target {
-        unsafe { Thin::with_mut(self, |p| erase_lt_mut(p)) }
+        unsafe { Thin::with_mut(self, |p| erase_lt_mut(P::deref_mut(p))) }
     }
 }
 
@@ -517,11 +533,11 @@ unsafe impl<P> ErasablePtr for Pin<P>
 where
     P: ErasablePtr + Deref,
 {
-    fn erase(this: Self) -> ptr::NonNull<Erased> {
+    fn erase(this: Self) -> ErasedPtr {
         unsafe { P::erase(Pin::into_inner_unchecked(this)) }
     }
 
-    unsafe fn unerase(this: ptr::NonNull<Erased>) -> Self {
+    unsafe fn unerase(this: ErasedPtr) -> Self {
         Pin::new_unchecked(P::unerase(this))
     }
 }
