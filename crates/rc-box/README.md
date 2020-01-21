@@ -28,6 +28,7 @@ We provide support for both `Arc` and `Rc`.
 - [`erasable`](https://lib.rs/crates/erasable): Erase pointers of their concrete type.
 - [`ptr-union`](https://lib.rs/crates/ptr-union): Pointer unions the size of a pointer.
 - [`rc-borrow`](https://lib.rs/crates/rc-borrow): Borrowed forms of `Rc` and `Arc`.
+- [`slice-dst`](https://lib.rs/crates/slice-dst): Support for custom slice-based DSTs.
 
 ## Minimum Supported Rust Version
 
