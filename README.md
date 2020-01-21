@@ -4,6 +4,7 @@
 - [`rc-borrow`](crates/rc-borrow): Borrowed forms of `Rc` and `Arc`.
 - [`rc-box`](crates/rc-box): Known unique forms of `Rc` and `Arc`.
 - [`ptr-union`](crates/ptr-union): Pointer unions the size of a pointer.
+- [`slice-dst`](crates/slice-dst): Support for custom slice-based DSTs.
 
 ## Why not [triomphe](https://crates.io/crates/triomphe)?
 
