@@ -1,3 +1,9 @@
+//! The heap layout of both `Rc` and `Arc` are two `usize` unsafe cells and the data payload.
+//! The value has to be at the end of the heap, because it could be an unsized trailing type.
+//! This is not guaranteed by the standard library, and is just an implementation detail.
+//! Nonetheless, we abuse that when `YOLO_RC_HEAP_LAYOUT_KNOWN` is set to allocate directly.
+//! Otherwise, custom DSTs must be allocated in a `Box` and then moved (the impl without env var).
+
 use {
     super::*,
     alloc::{rc::Rc, sync::Arc},
