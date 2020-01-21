@@ -14,6 +14,7 @@ not patch version bumps, and will be deliberate and clearly noted in change note
 - [`erasable`](https://lib.rs/crates/erasable): Erase pointers of their concrete type.
 - [`rc-borrow`](https://lib.rs/crates/rc-borrow): Borrowed forms of `Rc` and `Arc`.
 - [`rc-box`](https://lib.rs/crates/rc-box): Known unique forms of `Rc` and `Arc`.
+- [`slice-dst`](https://lib.rs/crates/slice-dst): Support for custom slice-based DSTs.
 
 ## License
 

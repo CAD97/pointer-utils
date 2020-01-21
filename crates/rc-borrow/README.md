@@ -19,6 +19,7 @@ use_resource(&borrowed);
 - [`erasable`](https://lib.rs/crates/erasable): Erase pointers of their concrete type.
 - [`ptr-union`](https://lib.rs/crates/ptr-union): Pointer unions the size of a pointer.
 - [`rc-box`](https://lib.rs/crates/rc-box): Known unique forms of `Rc` and `Arc`.
+- [`slice-dst`](https://lib.rs/crates/slice-dst): Support for custom slice-based DSTs.
 
 ## Why not [triomphe](https://crates.io/crates/triomphe)?
 

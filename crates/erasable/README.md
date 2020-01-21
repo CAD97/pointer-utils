@@ -19,6 +19,7 @@ There are two main useful reasons to type erase pointers in Rust:
 - [`ptr-union`](https://lib.rs/crates/ptr-union): Pointer unions the size of a pointer.
 - [`rc-borrow`](https://lib.rs/crates/rc-borrow): Borrowed forms of `Rc` and `Arc`.
 - [`rc-box`](https://lib.rs/crates/rc-box): Known unique forms of `Rc` and `Arc`.
+- [`slice-dst`](https://lib.rs/crates/slice-dst): Support for custom slice-based DSTs.
 
 ## Minimum Supported Rust Version
 
