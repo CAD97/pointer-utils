@@ -62,7 +62,7 @@ jobs:
       - name: Install toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2019-01-01
+          toolchain: nightly-2020-01-01
           profile: minimal
           override: true
 
