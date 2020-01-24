@@ -48,6 +48,54 @@ jobs:
           && rm -fr ./target/debug/{deps,.fingerprint}/{*erasable*,*ptr-union*,*rc-borrow*,*rc-box*,*slice-dst*} \
           && rm -f  ./target/.rustc_info.json
 
+  msrv-tests:
+    name: MSRV Tests
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: -D warnings
+      CARGO_INCREMENTAL: 0
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v1
+
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2019-01-01
+          profile: minimal
+          override: true
+
+      - name: Cargo target cache
+        uses: actions/cache@v1
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-msrv-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Generate lockfile
+        uses: actions-rs/cargo@v1
+        with:
+          command: -Z
+          args: generate-lockfile
+
+      - name: Compile
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --locked --all --all-targets --examples --no-run
+
+      - name: Test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --locked --all --all-targets --examples
+
+      - name: Prepare build directory for cache
+        run: |
+          find ./target/debug -maxdepth 1 -type f -delete \
+          && rm -fr ./target/debug/{deps,.fingerprint}/{*erasable*,*ptr-union*,*rc-borrow*,*rc-box*,*slice-dst*} \
+          && rm -f  ./target/.rustc_info.json
+
   fmt:
     name: Rustfmt
     runs-on: ubuntu-latest

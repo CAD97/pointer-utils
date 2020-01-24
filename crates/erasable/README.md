@@ -26,6 +26,8 @@ There are two main useful reasons to type erase pointers in Rust:
 We require a minimum Rust version of 1.41.0.
 This is for an adjustment of local trait impl checking.
 
+Minimum version support is only guaranteed with minimal version resolution
+(`-Z minimal-versions`/`--minimal-versions`) due to how dependencies are handled.
 The minimum version of Rust will only be incremented with minor version bumps,
 not patch version bumps, and will be deliberate and clearly noted in change notes.
 
