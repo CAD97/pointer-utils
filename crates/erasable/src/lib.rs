@@ -77,15 +77,26 @@ impl Debug for Erased {
 /// When implementing this trait, you should implement it for all `Erasable` pointee types.
 /// Implementing this trait allows use of the pointer in erased contexts, such as [`Thin`].
 ///
-/// Additionally, implementors of this trait are required to have "smart pointer" `Deref` impls.
-/// In other words, given an `ErasedPtr` erased from this type and a lifetime `'a` it is known
-/// valid for, it must be valid to unerase the pointer, dereference it, and promote the produced
-/// reference to `'a`. The produced reference must be into an allocation managed by this type,
-/// not the stack representation of this type.
+/// # Safety
 ///
-/// For example, `Box` implements `Erasable` because it's a pointer to a managed heap allocation.
-/// [`Lazy`](https://docs.rs/once_cell/1.2.0/once_cell/sync/struct.Lazy.html), however,
-/// `Deref`s into its own allocation, and as such, can not implement `Erasable`.
+/// A pointer type which is erasable must not include shared mutability before indirection.
+/// Equivalently, the erased pointer produced by calling `erase` on some `P` must be the same
+/// both before and after performing any set of operations on `&P`. `&mut P` methods (notably
+/// `DerefMut`) are still allowed to mutate the pointer value, if necessary.
+///
+/// Additionally, the address of the deref target must be independent of the address of the pointer.
+/// For example, `Box` implements `ErasablePtr` because it's a pointer to a managed heap allocation.
+/// [`Lazy`](https://docs.rs/once_cell/1.2/once_cell/sync/struct.Lazy.html), however,
+/// `Deref`s into its own location, and as such, can not implement `ErasablePtr`.
+///
+/// This is similar to (but distinct from!) the guarantees required by
+/// [`Pin`](https://doc.rust-lang.org/std/pin/struct.Pin.html) or
+/// [`StableDeref`](https://docs.rs/stable_deref_trait/1/stable_deref_trait/trait.StableDeref.html).
+///
+/// `Pin` requires no access to `&mut P`/`&mut P::target`, but these remain safe
+/// even when using [`Thin`] through [`Thin::with_mut`] and [`DerefMut`]` for Thin`.
+/// `StableDeref` requires the deref target to not change between invocations,
+/// but that is completely fine behavior for `ErasablePtr` types.
 ///
 /// # Examples
 ///
@@ -225,7 +236,13 @@ impl<P: ErasablePtr> Thin<P> {
     where
         F: FnOnce(&mut P) -> T,
     {
-        f(&mut Thin::inner(this))
+        // SAFETY: guard is required to write potentially changed pointer value, even on unwind
+        let mut this = unsafe {
+            scopeguard::guard(P::unerase(this.ptr), |unerased| {
+                ptr::write(this, Thin::from(unerased))
+            })
+        };
+        f(&mut this)
     }
 }
 
@@ -285,6 +302,9 @@ where
 {
     type Target = P::Target;
     fn deref(&self) -> &P::Target {
+        // SAFETY: This is safe because we are promoting the lifetime of &P::Target
+        // from borrowing from the transient &P to borrowing from our &Thin<P>.
+        // The Thin<P> is equivalent to the P for the purposes of owning
         unsafe { Thin::with(self, |p| erase_lt(P::deref(p))) }
     }
 }
