@@ -294,8 +294,6 @@ where
     }
 }
 
-// TODO: SAFETY REVIEW: Is this (and DerefMut) impl actually sound?
-//       We're doing really questionable lifetime hacking.
 impl<P: ErasablePtr> Deref for Thin<P>
 where
     P: Deref,
