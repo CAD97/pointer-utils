@@ -502,15 +502,24 @@ where
 
 // ~~~ impl Eraseable ~~~ //
 
-unsafe impl<T> Erasable for T {
+unsafe impl<T: Sized> Erasable for T {
     unsafe fn unerase(this: ErasedPtr) -> ptr::NonNull<T> {
+        // SAFETY: must not read the pointer for the safety of the impl directly below.
         this.cast()
     }
 }
 
 // ~~~ impl ErasablePtr ~~~ //
 
-unsafe impl<T: ?Sized> ErasablePtr for ptr::NonNull<T>
+// SAFETY NB: ErasablePtr for ptr::NonNull is unsound for unsized types, because
+// the _only_ requirement for calling unerase is that the erased pointer came from erase.
+// This means that _any_ value needs to successfully roundtrip through the two methods.
+// On top of this, Erasable requires that unerase be called with a valid pointer,
+// so that it is allowed to read from the pointer to recover unsized metadata.
+// SAFETY: this impl is sound for sized types because we control the Erasable impl,
+// and we know that Erasable for<T: Sized> T is the trivial impl that does no reads
+// (see directly above).
+unsafe impl<T: Sized> ErasablePtr for ptr::NonNull<T>
 where
     T: Erasable,
 {
