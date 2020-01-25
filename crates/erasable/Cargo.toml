@@ -18,5 +18,16 @@ maintenance = { status = "passively-maintained" }
 default = ["alloc"]
 alloc = []
 
+[dependencies]
+scopeguard = { version = "1.0.0", default-features = false }
+
+[dev-dependencies]
+either = "1.5.3"
+
 [build-dependencies]
 autocfg = "1.0.0"
+
+[[test]]
+name = "abuse"
+path = "tests/abuse.rs"
+required-features = ["alloc"]
