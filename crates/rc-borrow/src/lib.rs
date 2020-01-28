@@ -55,7 +55,11 @@ use {
 /// See https://internals.rust-lang.org/t/_/11463/11 for why these are important.
 /// By using a trait here, we can more easily switch when these functions are available.
 trait RawRc<T: ?Sized> {
+    //noinspection RsSelfConvention
     fn as_raw(this: &Self) -> *const T;
+    /// # Safety
+    ///
+    /// This pointer must have come from [`RawRc::as_raw`] or `into_raw`.
     unsafe fn clone_raw(this: *const T) -> Self;
 }
 
