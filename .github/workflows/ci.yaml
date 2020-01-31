@@ -59,24 +59,30 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v1
 
-      - name: Install toolchain
+      - name: Install nightly toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly-2020-01-01
           profile: minimal
+
+      - name: Install minimum supported stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: 1.41.0
+          profile: minimal
           override: true
+
+      - name: Generate lockfile
+        uses: actions-rs/cargo@v1
+        with:
+          command: +nightly-2020-01-01
+          args: -Z generate-lockfile
 
       - name: Cargo target cache
         uses: actions/cache@v1
         with:
           path: target
           key: ${{ runner.os }}-cargo-msrv-target-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Generate lockfile
-        uses: actions-rs/cargo@v1
-        with:
-          command: -Z
-          args: generate-lockfile
 
       - name: Compile
         uses: actions-rs/cargo@v1
