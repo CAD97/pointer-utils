@@ -1,7 +1,7 @@
-Borrowed forms of [`Rc`] and [`Arc`].
+Borrowed forms of `Rc` and `Arc`.
 
-`ArcBorrow<_>` is functionally equivalent to `&Arc<_>`,
-but it's represented as `&T`, avoiding the extra indirection.
+`ArcBorrow<'_, _>` is functionally equivalent to `&'_ Arc<_>`,
+but it's represented as `&'_ T`, avoiding the extra indirection.
 
 ## Examples
 
