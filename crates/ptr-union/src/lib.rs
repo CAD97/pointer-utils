@@ -310,7 +310,8 @@ macro_rules! union_methods {
                 UnionBuilder::<Self>::new()
             }
 
-            /// Check if two `Union`s point to the same value
+            /// Check if two `Union`s are the same variant
+            /// and point to the same value
             /// (not that the values compare as equal).
             pub fn ptr_eq(&self, other: &Self) -> bool {
                 self.raw == other.raw
