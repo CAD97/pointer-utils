@@ -9,7 +9,7 @@ repository = "https://github.com/CAD97/pointer-utils/tree/master/crates/erasable
 readme = "README.md"
 keywords = ["thin","pointer","type","erasure"]
 categories = ["data-structures","no-std","rust-patterns"]
-license = "MIT OR APACHE-2.0"
+license = "MIT OR Apache-2.0"
 
 [badges]
 maintenance = { status = "passively-maintained" }
