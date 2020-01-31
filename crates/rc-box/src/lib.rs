@@ -95,7 +95,7 @@ macro_rules! rc_box {
 
         // downcast is pretty useless without CoerceUnsized
 
-        impl $RcBox<dyn Any> {
+        impl $RcBox<dyn Any + 'static> {
             doc_comment! {
                 concat!("Attempt to downcast the box to a concrete type.
 
@@ -121,7 +121,9 @@ print_if_string(my_number.try_into().unwrap());
 
 The unsizing as `", stringify!($Rc), "` is required until
 [DST coercions](https://github.com/rust-lang/rust/issues/27732) are stabilized."),
-                pub fn downcast<T: Any>(self) -> Result<$RcBox<T>, Self> {
+                pub fn downcast<T>(self) -> Result<$RcBox<T>, Self>
+                where T: Any,
+                {
                     if self.is::<T>() {
                         unsafe {
                             let raw: *mut dyn Any = Self::into_raw(self).as_ptr();
@@ -134,7 +136,7 @@ The unsizing as `", stringify!($Rc), "` is required until
             }
         }
 
-        impl $RcBox<dyn Any + Send + Sync> {
+        impl $RcBox<dyn Any + 'static + Send> {
         doc_comment! {
                 concat!("Attempt to downcast the box to a concrete type.
 
@@ -145,22 +147,65 @@ The unsizing as `", stringify!($Rc), "` is required until
 # use std::rc::Rc; use std::sync::Arc;
 use std::any::Any;
 
-fn print_if_string(value: ", stringify!($RcBox), r#"<dyn Any>) {
+fn print_if_string(value: ", stringify!($RcBox), r#"<dyn Any + Send>) {
     if let Ok(string) = value.downcast::<String>() {
         println!("String ({}): {}", string.len(), string);
     }
 }
 
 let my_string = "Hello World".to_string();
-let my_string: "#, stringify!($Rc), "<dyn Any> = ", stringify!($Rc), "::new(my_string); 
+let my_string: "#, stringify!($Rc), "<dyn Any + Send> = ", stringify!($Rc), "::new(my_string); 
 print_if_string(my_string.try_into().unwrap());
-let my_number: ", stringify!($Rc), "<dyn Any> = ", stringify!($Rc), "::new(0i8);
+let my_number: ", stringify!($Rc), "<dyn Any + Send> = ", stringify!($Rc), "::new(0i8);
 print_if_string(my_number.try_into().unwrap());
 ```
 
 The unsizing as `", stringify!($Rc), "` is required until
 [DST coercions](https://github.com/rust-lang/rust/issues/27732) are stabilized."),
-                pub fn downcast<T: Any>(self) -> Result<$RcBox<T>, Self> {
+                pub fn downcast<T>(self) -> Result<$RcBox<T>, Self>
+                where T: Any + Send
+                {
+                    if self.is::<T>() {
+                        unsafe {
+                            let raw: *mut (dyn Any + Send) = Self::into_raw(self).as_ptr();
+                            Ok($RcBox::from_raw(raw as *mut T))
+                        }
+                    } else {
+                        Err(self)
+                    }
+                }
+            }
+        }
+
+        impl $RcBox<dyn Any + 'static + Send + Sync> {
+        doc_comment! {
+                concat!("Attempt to downcast the box to a concrete type.
+
+# Examples
+
+```rust
+# use rc_box::*; use std::convert::TryInto;
+# use std::rc::Rc; use std::sync::Arc;
+use std::any::Any;
+
+fn print_if_string(value: ", stringify!($RcBox), r#"<dyn Any + Send + Sync>) {
+    if let Ok(string) = value.downcast::<String>() {
+        println!("String ({}): {}", string.len(), string);
+    }
+}
+
+let my_string = "Hello World".to_string();
+let my_string: "#, stringify!($Rc), "<dyn Any + Send + Sync> = ", stringify!($Rc), "::new(my_string); 
+print_if_string(my_string.try_into().unwrap());
+let my_number: ", stringify!($Rc), "<dyn Any + Send + Sync> = ", stringify!($Rc), "::new(0i8);
+print_if_string(my_number.try_into().unwrap());
+```
+
+The unsizing as `", stringify!($Rc), "` is required until
+[DST coercions](https://github.com/rust-lang/rust/issues/27732) are stabilized."),
+                pub fn downcast<T>(self) -> Result<$RcBox<T>, Self>
+                where T: Any + Send + Sync
+                {
                     if self.is::<T>() {
                         unsafe {
                             let raw: *mut (dyn Any + Send + Sync) = Self::into_raw(self).as_ptr();
@@ -182,7 +227,8 @@ The unsizing as `", stringify!($Rc), "` is required until
 # Safety
 
 The raw pointer must have previously been acquired by a call to [`",
-stringify!($RcBox), "::into_raw`]."),
+stringify!($RcBox), "::into_raw`], or [`", stringify!($Rc), "::into_raw`]
+where the `", stringify!($Rc), "` is known unique."),
                 pub unsafe fn from_raw(ptr: *const T) -> Self {
                     $RcBox {
                         // NB: $Rc::from_raw uses `ptr::NonNull::new_unchecked`
@@ -197,7 +243,7 @@ stringify!($RcBox), "::into_raw`]."),
 
 This method exists only for API compatibility with `", stringify!($Rc), "`.
 Use `DerefMut` instead."),
-                #[deprecated(note = "Use DerefMut instead")]
+                #[deprecated(note = "Use [`DerefMut`](#impl-DerefMut) instead")]
                 pub fn get_mut(this: &mut Self) -> Option<&mut T> {
                     Some(&mut **this)
                 }
@@ -208,7 +254,7 @@ Use `DerefMut` instead."),
 
 This method exists only for API compatibility with `", stringify!($Rc), "`.
 Use `DerefMut` instead."),
-                #[deprecated(note = "Use DerefMut instead")]
+                #[deprecated(note = "Use [`DerefMut`](#impl-DerefMut) instead")]
                 pub fn get_mut_unchecked(this: &mut Self) -> &mut T {
                     &mut **this
                 }
@@ -225,20 +271,23 @@ That makes this function equivalent to `as_raw_non_null`."),
                 }
             }
 
-            // NB: This replaces into_raw with into_raw_non_null
             doc_comment! {
                 concat!("\
 Consume the `", stringify!($RcBox), "`, returning the wrapped pointer.
 
 To avoid a memory leak, the pointer must be converted back to a `",
-stringify!($RcBox), "`, using [`", stringify!($RcBox), "::from_raw`]."),
+stringify!($RcBox), "`, using [`", stringify!($RcBox), "::from_raw`],
+or directly into a `", stringify!($Rc), "`, using [`", stringify!($Rc), "::from_raw`].
+
+Note that this returns a [`ptr::NonNull`], not a raw pointer.
+That makes this function equivalent to `into_raw_non_null`."),
                 pub fn into_raw(this: Self) -> ptr::NonNull<T> {
                     $RcBox::as_raw(&ManuallyDrop::new(this))
                 }
             }
 
             doc_comment! {
-                concat!("Consume and leak the `", stringify!($RcBox), "."),
+                concat!("Consume and leak the `", stringify!($RcBox), "`."),
                 pub fn leak<'a>(this: Self) -> &'a mut T
                 where
                     T: 'a,
@@ -261,7 +310,7 @@ stringify!($RcBox), "`, using [`", stringify!($RcBox), "::from_raw`]."),
 
             doc_comment! {
                 concat!("\
-Construct a new `Pin<", stringify!($RcBox), "<T>>`. If `T` does not implement [`Unpin`],\
+Construct a new `Pin<", stringify!($RcBox), "<T>>`. If `T` does not implement [`Unpin`],
 then the data will be pinned in memory and unable to be moved."),
                 pub fn pin(x: T) -> Pin<$RcBox<T>>
                 where

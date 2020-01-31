@@ -189,6 +189,7 @@ pub fn erase<T: ?Sized>(ptr: ptr::NonNull<T>) -> ErasedPtr {
 ///
 /// Note that this uses a `Sized` type: `[i32; 10]`.
 /// This library does not provide erasable `?Sized` types.
+/// For that, try out [`slice-dst`](https://lib.rs/slice-dst).
 #[repr(transparent)]
 pub struct Thin<P: ErasablePtr> {
     ptr: ErasedPtr,
@@ -302,7 +303,8 @@ where
     fn deref(&self) -> &P::Target {
         // SAFETY: This is safe because we are promoting the lifetime of &P::Target
         // from borrowing from the transient &P to borrowing from our &Thin<P>.
-        // The Thin<P> is equivalent to the P for the purposes of owning
+        // The Thin<P> is equivalent to the P for the purposes of owning derived pointers,
+        // and ErasablePtr guarantees that Deref goes to an independent location.
         unsafe { Thin::with(self, |p| erase_lt(P::deref(p))) }
     }
 }
@@ -312,6 +314,10 @@ where
     P: DerefMut,
 {
     fn deref_mut(&mut self) -> &mut P::Target {
+        // SAFETY: This is safe because we are promoting the lifetime of &P::Target
+        // from borrowing from the transient &P to borrowing from our &Thin<P>.
+        // The Thin<P> is equivalent to the P for the purposes of owning derived pointers,
+        // and ErasablePtr guarantees that Deref goes to an independent location.
         unsafe { Thin::with_mut(self, |p| erase_lt_mut(P::deref_mut(p))) }
     }
 }

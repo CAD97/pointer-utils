@@ -55,7 +55,11 @@ use {
 /// See https://internals.rust-lang.org/t/_/11463/11 for why these are important.
 /// By using a trait here, we can more easily switch when these functions are available.
 trait RawRc<T: ?Sized> {
+    //noinspection RsSelfConvention
     fn as_raw(this: &Self) -> *const T;
+    /// # Safety
+    ///
+    /// This pointer must have come from [`RawRc::as_raw`] or `into_raw`.
     unsafe fn clone_raw(this: *const T) -> Self;
 }
 
@@ -104,9 +108,9 @@ impl<T: ?Sized> RawRc<T> for Rc<T> {
 }
 
 macro_rules! rc_borrow {
-    ($($(#[$m:meta])* $RcBorrow:ident = $Rc:ident)*) => {$(
+    ($($(#[$m:meta])* $vis:vis struct $RcBorrow:ident = &$Rc:ident;)*) => {$(
         $(#[$m])*
-        pub struct $RcBorrow<'a, T: ?Sized> {
+        $vis struct $RcBorrow<'a, T: ?Sized> {
             raw: ptr::NonNull<T>,
             marker: PhantomData<&'a $Rc<T>>
         }
@@ -127,7 +131,7 @@ macro_rules! rc_borrow {
 
         impl<'a, T: ?Sized> $RcBorrow<'a, T> {
             /// Convert this borrowed pointer into an owned pointer.
-            pub fn upgrade(this: Self) -> $Rc<T> {
+            $vis fn upgrade(this: Self) -> $Rc<T> {
                 unsafe { <$Rc<T> as RawRc<T>>::clone_raw(this.raw.as_ptr()) }
             }
 
@@ -135,7 +139,7 @@ macro_rules! rc_borrow {
             ///
             /// This gives you a long-lived reference,
             /// whereas dereferencing gives a temporary borrow.
-            pub fn downgrade(this: Self) -> &'a T {
+            $vis fn downgrade(this: Self) -> &'a T {
                 unsafe { &*this.raw.as_ptr() }
             }
         }
@@ -337,10 +341,10 @@ rc_borrow! {
     ///
     /// This type is guaranteed to have the same repr as `&T`.
     #[repr(transparent)]
-    ArcBorrow = Arc
+    pub struct ArcBorrow = &Arc;
     /// Borrowed version of [`Rc`].
     ///
     /// This type is guaranteed to have the same repr as `&T`.
     #[repr(transparent)]
-    RcBorrow = Rc
+    pub struct RcBorrow = &Rc;
 }
