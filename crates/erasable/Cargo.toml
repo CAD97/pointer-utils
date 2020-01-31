@@ -1,6 +1,6 @@
 [package]
 name = "erasable"
-version = "1.0.0-dev"
+version = "1.0.0"
 edition = "2018"
 
 authors = ["Christopher Durham (cad97) <cad97@cad97.com>"]
