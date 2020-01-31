@@ -189,6 +189,7 @@ pub fn erase<T: ?Sized>(ptr: ptr::NonNull<T>) -> ErasedPtr {
 ///
 /// Note that this uses a `Sized` type: `[i32; 10]`.
 /// This library does not provide erasable `?Sized` types.
+/// For that, try out [`slice-dst`](https://lib.rs/slice-dst).
 #[repr(transparent)]
 pub struct Thin<P: ErasablePtr> {
     ptr: ErasedPtr,
