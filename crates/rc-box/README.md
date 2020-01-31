@@ -7,6 +7,13 @@ With the standard library types, you would use `get_mut` and have to handle the 
 case where the value was shared. With the known unique versions, you have `DerefMut`,
 so it's as simple as mutating behind a `Box`.
 
+## Related Crates
+
+- [`erasable`](https://lib.rs/crates/erasable): Erase pointers of their concrete type.
+- [`ptr-union`](https://lib.rs/crates/ptr-union): Pointer unions the size of a pointer.
+- [`rc-borrow`](https://lib.rs/crates/rc-borrow): Borrowed forms of `Rc` and `Arc`.
+- [`slice-dst`](https://lib.rs/crates/slice-dst): Support for custom slice-based DSTs.
+
 ## Why not [triomphe](https://crates.io/crates/triomphe)?
 
 Triomphe is a great atomic reference counting library!
@@ -22,13 +29,6 @@ use these pointer utilities.
 
 Additionally, triomphe only supports atomic reference counting.
 We provide support for both `Arc` and `Rc`.
-
-## Related Crates
-
-- [`erasable`](https://lib.rs/crates/erasable): Erase pointers of their concrete type.
-- [`ptr-union`](https://lib.rs/crates/ptr-union): Pointer unions the size of a pointer.
-- [`rc-borrow`](https://lib.rs/crates/rc-borrow): Borrowed forms of `Rc` and `Arc`.
-- [`slice-dst`](https://lib.rs/crates/slice-dst): Support for custom slice-based DSTs.
 
 ## Minimum Supported Rust Version
 

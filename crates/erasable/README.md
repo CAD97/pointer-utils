@@ -9,10 +9,12 @@ There are two main useful reasons to type erase pointers in Rust:
   treating it opaquely reduces monomorphization cost
   both to the author and the compiler.
 - Thin pointers to `?Sized` types. If an unsized type stores its metadata inline,
-  then it can implement [`Erasable`] and be used behind type-erased pointers.
+  then it can implement [`Erasable`](https://cad97.github.io/pointer-utils/erasable/trait.Erasable.html)
+  and be used behind type-erased pointers.
   The type erased pointer does not have to carry the metadata,
   and the fat pointer can be recovered from the inline metadata.
-  We provide the [`Thin`] wrapper type to provide thin pointer types.
+  We provide the [`Thin`](https://cad97.github.io/pointer-utils/erasable/struct.Thin.html)
+  wrapper type to provide thin pointer types.
 
 ## Related Crates
 

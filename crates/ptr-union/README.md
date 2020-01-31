@@ -1,6 +1,13 @@
 Pointer union types the size of a pointer
 by storing the tag in the alignment bits.
 
+## Related Crates
+
+- [`erasable`](https://lib.rs/crates/erasable): Erase pointers of their concrete type.
+- [`rc-borrow`](https://lib.rs/crates/rc-borrow): Borrowed forms of `Rc` and `Arc`.
+- [`rc-box`](https://lib.rs/crates/rc-box): Known unique forms of `Rc` and `Arc`.
+- [`slice-dst`](https://lib.rs/crates/slice-dst): Support for custom slice-based DSTs.
+
 ## Minimum Supported Rust Version
 
 We require a minimum Rust version of 1.41.0.
@@ -10,13 +17,6 @@ Minimum version support is only guaranteed with minimal version resolution
 (`-Z minimal-versions`/`--minimal-versions`) due to how dependencies are handled.
 The minimum version of Rust will only be incremented with minor version bumps,
 not patch version bumps, and will be deliberate and clearly noted in change notes.
-
-## Related Crates
-
-- [`erasable`](https://lib.rs/crates/erasable): Erase pointers of their concrete type.
-- [`rc-borrow`](https://lib.rs/crates/rc-borrow): Borrowed forms of `Rc` and `Arc`.
-- [`rc-box`](https://lib.rs/crates/rc-box): Known unique forms of `Rc` and `Arc`.
-- [`slice-dst`](https://lib.rs/crates/slice-dst): Support for custom slice-based DSTs.
 
 ## License
 

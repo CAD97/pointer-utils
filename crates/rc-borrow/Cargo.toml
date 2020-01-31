@@ -1,6 +1,6 @@
 [package]
 name = "rc-borrow"
-version = "1.0.0-dev"
+version = "1.0.0"
 edition = "2018"
 
 authors = ["Christopher Durham (cad97) <cad97@cad97.com>"]
@@ -14,14 +14,19 @@ license = "MIT OR APACHE-2.0"
 [badges]
 maintenance = { status = "passively-maintained" }
 
-[dependencies.erasable]
-version = "1.0.0-dev"
-path = "../erasable"
-optional = true
-
 [features]
 default = ["erasable", "std"]
 std = []
 
+[dependencies.erasable]
+version = "1.0.0"
+path = "../erasable"
+optional = true
+
 [build-dependencies]
 autocfg = "1.0.0"
+
+[[test]]
+name = "smoke"
+path = "tests/smoke.rs"
+required-features = ["erasable", "std"]
