@@ -4,127 +4,125 @@
 name = "autocfg"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f8aac770f1885fd7e387acedd76065302551364496e46b3dd00860b2f8359b9d"
 
 [[package]]
 name = "either"
 version = "1.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bb1f6b1ce1c140482ea30ddd3335fc0024ac7ee112895426e0a629a6c20adfe3"
 
 [[package]]
 name = "erasable"
 version = "1.0.0"
 dependencies = [
- "autocfg 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "either 1.5.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "scopeguard 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "autocfg",
+ "either",
+ "scopeguard",
 ]
 
 [[package]]
 name = "paste"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "423a519e1c6e828f1e73b720f9d9ed2fa643dce8a7737fb43235ce0b41eeaa49"
 dependencies = [
- "paste-impl 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "proc-macro-hack 0.5.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "paste-impl",
+ "proc-macro-hack",
 ]
 
 [[package]]
 name = "paste-impl"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4214c9e912ef61bf42b81ba9a47e8aad1b2ffaf739ab162bf96d1e011f54e6c5"
 dependencies = [
- "proc-macro-hack 0.5.11 (registry+https://github.com/rust-lang/crates.io-index)",
- "proc-macro2 1.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "syn 1.0.14 (registry+https://github.com/rust-lang/crates.io-index)",
+ "proc-macro-hack",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
 name = "proc-macro-hack"
 version = "0.5.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ecd45702f76d6d3c75a80564378ae228a85f0b59d2f3ed43c91b4a69eb2ebfc5"
 dependencies = [
- "proc-macro2 1.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "syn 1.0.14 (registry+https://github.com/rust-lang/crates.io-index)",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
 name = "proc-macro2"
 version = "1.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3acb317c6ff86a4e579dfa00fc5e6cca91ecbb4e7eb2df0468805b674eb88548"
 dependencies = [
- "unicode-xid 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "unicode-xid",
 ]
 
 [[package]]
 name = "ptr-union"
 version = "1.0.0"
 dependencies = [
- "autocfg 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "erasable 1.0.0",
- "paste 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "autocfg",
+ "erasable",
+ "paste",
 ]
 
 [[package]]
 name = "quote"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "053a8c8bcc71fcce321828dc897a98ab9760bef03a4fc36693c231e5b3216cfe"
 dependencies = [
- "proc-macro2 1.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "proc-macro2",
 ]
 
 [[package]]
 name = "rc-borrow"
 version = "1.0.0"
 dependencies = [
- "autocfg 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "erasable 1.0.0",
+ "autocfg",
+ "erasable",
 ]
 
 [[package]]
 name = "rc-box"
 version = "1.0.0"
 dependencies = [
- "erasable 1.0.0",
+ "erasable",
 ]
 
 [[package]]
 name = "scopeguard"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b42e15e59b18a828bbf5c58ea01debb36b9b096346de35d941dcb89009f24a0d"
 
 [[package]]
 name = "slice-dst"
 version = "1.0.0"
 dependencies = [
- "autocfg 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "erasable 1.0.0",
+ "autocfg",
+ "erasable",
 ]
 
 [[package]]
 name = "syn"
 version = "1.0.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "af6f3550d8dff9ef7dc34d384ac6f107e5d31c8f57d9f28e0081503f547ac8f5"
 dependencies = [
- "proc-macro2 1.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "unicode-xid 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "proc-macro2",
+ "quote",
+ "unicode-xid",
 ]
 
 [[package]]
 name = "unicode-xid"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-
-[metadata]
-"checksum autocfg 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "f8aac770f1885fd7e387acedd76065302551364496e46b3dd00860b2f8359b9d"
-"checksum either 1.5.3 (registry+https://github.com/rust-lang/crates.io-index)" = "bb1f6b1ce1c140482ea30ddd3335fc0024ac7ee112895426e0a629a6c20adfe3"
-"checksum paste 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "423a519e1c6e828f1e73b720f9d9ed2fa643dce8a7737fb43235ce0b41eeaa49"
-"checksum paste-impl 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "4214c9e912ef61bf42b81ba9a47e8aad1b2ffaf739ab162bf96d1e011f54e6c5"
-"checksum proc-macro-hack 0.5.11 (registry+https://github.com/rust-lang/crates.io-index)" = "ecd45702f76d6d3c75a80564378ae228a85f0b59d2f3ed43c91b4a69eb2ebfc5"
-"checksum proc-macro2 1.0.8 (registry+https://github.com/rust-lang/crates.io-index)" = "3acb317c6ff86a4e579dfa00fc5e6cca91ecbb4e7eb2df0468805b674eb88548"
-"checksum quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)" = "053a8c8bcc71fcce321828dc897a98ab9760bef03a4fc36693c231e5b3216cfe"
-"checksum scopeguard 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "b42e15e59b18a828bbf5c58ea01debb36b9b096346de35d941dcb89009f24a0d"
-"checksum syn 1.0.14 (registry+https://github.com/rust-lang/crates.io-index)" = "af6f3550d8dff9ef7dc34d384ac6f107e5d31c8f57d9f28e0081503f547ac8f5"
-"checksum unicode-xid 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "826e7639553986605ec5979c7dd957c7895e93eabed50ab2ffa7f6128a75097c"
+checksum = "826e7639553986605ec5979c7dd957c7895e93eabed50ab2ffa7f6128a75097c"
