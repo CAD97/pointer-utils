@@ -201,13 +201,10 @@ unsafe impl<P: ErasablePtr> Sync for Thin<P> where P: Sync {}
 
 impl<P: ErasablePtr> From<P> for Thin<P> {
     fn from(this: P) -> Self {
-        let this = Thin::<P> {
+        Thin::<P> {
             ptr: P::erase(this),
             marker: PhantomData,
-        };
-        Thin::inner(&this);
-        Thin::with(&this, |_| {});
-        this
+        }
     }
 }
 
