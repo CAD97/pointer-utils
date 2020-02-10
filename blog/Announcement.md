@@ -47,11 +47,9 @@ It offers a single method, [`new`](https://docs.rs/slice-dst/1.0.0/slice_dst/str
 which is polymorphic over potential containers and collects an iterator directly into the target allocation<sup>†</sup>.
 
 † At the current time, `Rc` and `Arc` do support slice-based DSTs, but must allocate first in a `Box`,
-then move into the reference-counted allocation. The
-[`YOLO_RC_HEAP_LAYOUT_KNOWN`](https://github.com/CAD97/pointer-utils/blob/master/crates/slice-dst/src/yolo_rc_impls.rs)
-environment variable can be set to very unsafely assume it knows the heap layout of (`A`)`Rc` and do a direct allocation.
-This is directly relying on implementation details of the standard library, and is not stable API.
-I just think it's cool, and it shows off that this actually is theoretically supported.
+then move into the reference-counted allocation.
+Until the heap layout of (`A`)`Rc` is stable (if it ever is),
+this is required (unless you want to do some evil questionably ok things).
 
 ## Generally useful crates
 
