@@ -11,14 +11,13 @@ use {
 };
 
 #[repr(C)]
-#[allow(dead_code)]
 struct RcHeapLayout<T: ?Sized> {
     strong: UnsafeCell<usize>,
     weak: UnsafeCell<usize>,
     value: T,
 }
 
-unsafe impl<S: ?Sized + SliceDst> AllocSliceDst<S> for Rc<S> {
+unsafe impl<S: ?Sized + SliceDst> AllocSliceDst<RcHeapLayout<T>> for Box<RcHeapLayout<T>> {
     unsafe fn new_slice_dst<I>(len: usize, init: I) -> Self
     where
         I: FnOnce(ptr::NonNull<S>),
@@ -49,16 +48,28 @@ unsafe impl<S: ?Sized + SliceDst> AllocSliceDst<S> for Rc<S> {
             slice::from_raw_parts_mut(ptr.cast::<u8>().as_ptr().add(value_offset).cast(), len)
                 .into(),
         ));
-        Rc::from_raw(ptr.as_ptr())
+        Box::from_raw(ptr.as_ptr())
     }
 }
 
+//noinspection DuplicatedCode
+unsafe impl<S: ?Sized + SliceDst> AllocSliceDst<S> for Rc<S> {
+    unsafe fn new_slice_dst<I>(len: usize, init: I) -> Self
+    where
+        I: FnOnce(ptr::NonNull<S>),
+    {
+        let boxed: Box<RcHeapLayout<S>> = Box::<RcHeapLayout<S>>::new_slice_dst(len, init);
+        mem::transmute(boxed)
+    }
+}
+
+//noinspection DuplicatedCode
 unsafe impl<S: ?Sized + SliceDst> AllocSliceDst<S> for Arc<S> {
     unsafe fn new_slice_dst<I>(len: usize, init: I) -> Self
     where
         I: FnOnce(ptr::NonNull<S>),
     {
-        let rc: Rc<S> = Rc::new_slice_dst(len, init);
-        mem::transmute(rc)
+        let boxed: Box<RcHeapLayout<S>> = Box::<RcHeapLayout<S>>::new_slice_dst(len, init);
+        mem::transmute(boxed)
     }
 }
