@@ -33,7 +33,7 @@ There are two key traits in addition to that of erasable that enable this ergono
 - [`AllocSliceDst`](https://docs.rs/slice-dst/1.0.0/slice_dst/trait.AllocSliceDst.html), which is a trait for
   types which can allocate a slice-based DST. Basically, this is a trait for "owned smart pointer" types.
   Two functions, [`alloc_slice_dst`](https://docs.rs/slice-dst/1.0.0/slice_dst/fn.alloc_slice_dst.html) and
-  [`alloc_slice_dst`](https://docs.rs/slice-dst/1.0.0/slice_dst/fn.alloc_slice_dst_in.html) are provided to
+  [`alloc_slice_dst_in`](https://docs.rs/slice-dst/1.0.0/slice_dst/fn.alloc_slice_dst_in.html) are provided to
   assist in the creation of `AllocSliceDst` implementations.
 - [`SliceDst`](https://docs.rs/slice-dst/1.0.0/slice_dst/trait.SliceDst.html), for actual slice-based DSTs.
   All this trait actually requires is a way to calculate the allocation layout of the type from the slice length,
