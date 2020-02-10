@@ -23,7 +23,7 @@ fn zst() {
 type Data = usize;
 #[repr(transparent)]
 #[derive(Debug, Clone)]
-struct Node(Thin<Box<SliceWithHeader<Data, Node>>>);
+struct Node(Thin<Arc<SliceWithHeader<Data, Node>>>);
 
 // NB: the wrapper type is required, as the type alias version
 //     type Node = Thin<Arc<SliceWithHeader<Data, Node>>>
@@ -35,7 +35,7 @@ impl Node {
         I: IntoIterator<Item = Node>,
         I::IntoIter: ExactSizeIterator,
     {
-        Node(SliceWithHeader::new::<Box<_>, I>(head, children).into())
+        Node(SliceWithHeader::new::<Arc<_>, I>(head, children).into())
     }
 
     fn data(&self) -> usize {
