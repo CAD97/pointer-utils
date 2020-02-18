@@ -3,7 +3,11 @@
 
 #![allow(unused, clippy::redundant_clone)]
 
-use {erasable::Thin, slice_dst::*, std::sync::Arc};
+use {
+    erasable::Thin,
+    slice_dst::*,
+    std::{mem::MaybeUninit, sync::Arc},
+};
 
 #[test]
 fn slice() {
@@ -18,6 +22,13 @@ fn zst() {
     let slice: Vec<()> = vec![(); 16];
     let slice: Box<SliceWithHeader<(), ()>> = SliceWithHeader::new((), slice);
     let slice = slice.clone();
+}
+
+#[test]
+fn actual_zst() {
+    unsafe {
+        let slice: Box<[MaybeUninit<()>]> = Box::new_slice_dst(10, drop);
+    }
 }
 
 type Data = usize;
