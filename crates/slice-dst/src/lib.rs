@@ -125,6 +125,16 @@ pub unsafe trait SliceDst {
     fn retype(ptr: ptr::NonNull<[()]>) -> ptr::NonNull<Self>;
 }
 
+unsafe impl<T> SliceDst for [T] {
+    fn layout_for(len: usize) -> Layout {
+        layout_polyfill::layout_array::<T>(len).unwrap()
+    }
+
+    fn retype(ptr: ptr::NonNull<[()]>) -> ptr::NonNull<Self> {
+        unsafe { ptr::NonNull::new_unchecked(ptr.as_ptr() as *mut _) }
+    }
+}
+
 /// Allocate a slice-based DST with the [global allocator][`alloc()`].
 ///
 /// The returned pointer is owned and completely uninitialized;
