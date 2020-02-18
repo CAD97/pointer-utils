@@ -122,6 +122,57 @@ impl Debug for Erased {
 /// let thin_box: Thin<MyBox<_>> = boxed.into();
 /// dbg!(thin_box);
 /// ```
+///
+/// # Counterexamples
+//  These are available to be run under miri to observe UB as tests/this_is_ub_examples.rs!
+///
+/// This implementation of `ErasablePtr` is unsound
+/// because it features shared mutability before indirection:
+///
+/// ```rust,no_run
+/// # use {erasable::*, std::cell::Cell};
+/// struct Pls {
+///     inner: Cell<Box<u8>>,
+/// }
+///
+/// unsafe impl ErasablePtr for Pls {
+///     fn erase(this: Self) -> ErasedPtr { ErasablePtr::erase(this.inner.into_inner()) }
+///     unsafe fn unerase(this: ErasedPtr) -> Self {
+///         Pls { inner: Cell::new(ErasablePtr::unerase(this)) }
+///     }
+/// }
+///
+/// impl Pls {
+///     fn mutate(&self, to: Box<u8>) { self.inner.set(to); }
+/// }
+///
+/// let thin = Thin::from(Pls { inner: Cell::new(Box::new(0)) });
+/// Thin::with(&thin, |pls| pls.mutate(Box::new(1))); // drops box(0), leaks box(1)
+/// drop(thin); // `thin` is still Pls(Box(0)); use-after-free
+/// ```
+///
+/// This implementation of `ErasablePtr` is unsound
+/// because it dereferences to the interior of the type:
+///
+/// ```rust,no_run
+/// # use {erasable::*, std::ops::Deref};
+/// struct Why {
+///     inner: Box<u8>,
+/// }
+///
+/// unsafe impl ErasablePtr for Why {
+///     fn erase(this: Self) -> ErasedPtr { ErasablePtr::erase(this.inner) }
+///     unsafe fn unerase(this: ErasedPtr) -> Self { Why { inner: ErasablePtr::unerase(this) } }
+/// }
+///
+/// impl Deref for Why {
+///     type Target = Box<u8>;
+///     fn deref(&self) -> &Box<u8> { &self.inner }
+/// }
+///
+/// let thin = Thin::from(Why { inner: Box::new(0) });
+/// let _: &Box<u8> = thin.deref(); // use-after-free; cannot deref to value that does not exist
+/// ```
 pub unsafe trait ErasablePtr {
     /// Turn this erasable pointer into an erased pointer.
     ///
