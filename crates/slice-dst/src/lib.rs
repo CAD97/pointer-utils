@@ -139,6 +139,9 @@ unsafe impl<T> SliceDst for [T] {
 ///
 /// The returned pointer is owned and completely uninitialized;
 /// you are required to initialize it correctly.
+///
+/// If the type to be allocated has zero size,
+/// then an arbitrary aligned dangling nonnull pointer is returned.
 pub fn alloc_slice_dst<S: ?Sized + SliceDst>(len: usize) -> ptr::NonNull<S> {
     alloc_slice_dst_in(|it| it, len)
 }
@@ -147,14 +150,26 @@ pub fn alloc_slice_dst<S: ?Sized + SliceDst>(len: usize) -> ptr::NonNull<S> {
 ///
 /// The returned pointer is owned and completely uninitialized;
 /// you are required to initialize it correctly.
+///
+/// Note that while this function returns a `ptr::NonNull<S>`,
+/// the pointer is to the allocation as specified by `container(S::layout(len))`,
+/// so if you want/need a pointer to `S`, you will need to offset it.
+///
+/// If the layout to be allocated has zero size,
+/// then an arbitrary aligned dangling nonnull pointer is returned.
 pub fn alloc_slice_dst_in<S: ?Sized + SliceDst, F>(container: F, len: usize) -> ptr::NonNull<S>
 where
     F: FnOnce(Layout) -> Layout,
 {
     let layout = container(S::layout_for(len));
     unsafe {
-        let ptr = ptr::NonNull::new(alloc(layout) as *mut ())
-            .unwrap_or_else(|| handle_alloc_error(layout));
+        let ptr = if layout.size() == 0 {
+            // Do not allocate in the ZST case! CAD97/pointer-utils#23
+            ptr::NonNull::new(layout.align() as *mut ())
+        } else {
+            ptr::NonNull::new(alloc(layout) as *mut ())
+        }
+        .unwrap_or_else(|| handle_alloc_error(layout));
         let ptr = ptr::NonNull::new_unchecked(slice::from_raw_parts_mut::<()>(ptr.as_ptr(), len));
         S::retype(ptr)
     }
