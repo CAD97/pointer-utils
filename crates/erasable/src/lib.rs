@@ -38,8 +38,6 @@ use core::{
     ptr,
     task::{Context, Poll},
 };
-#[cfg(feature = "slice-dst")]
-use slice_dst::{SliceDst, SliceWithHeader};
 
 /// A thin, type-erased pointer.
 ///
