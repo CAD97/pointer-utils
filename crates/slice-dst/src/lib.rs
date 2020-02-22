@@ -295,6 +295,8 @@ unsafe impl<Header, Item> Erasable for SliceWithHeader<Header, Item> {
         let raw = ptr::NonNull::new_unchecked(slice_from_raw_parts(this.as_ptr().cast(), len));
         Self::retype(raw)
     }
+
+    const ACK_1_1_0: bool = true;
 }
 
 pub(crate) mod layout_polyfill;
