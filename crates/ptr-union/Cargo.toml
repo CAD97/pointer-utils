@@ -21,6 +21,9 @@ alloc = ["erasable/alloc"]
 [dependencies]
 paste = "0.1.6"
 
+# minimal-versions fix dtolnay/paste#15
+proc-macro-hack = "0.5.9"
+
 [dependencies.erasable]
 version = "1.0.0"
 path = "../erasable"
