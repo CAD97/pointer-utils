@@ -251,8 +251,8 @@ pub unsafe trait Erasable {
     /// Not doing so will expose you to potentially unsound implementations
     /// written against 1.0.0 before the reference clarification was made.
     ///
-    /// The environment variable `ACK_1_1_0` can be set to enforce that all
-    /// implementors have provided an override for this acknowledgement.
+    /// The environment variable `ERASABLE_ENFORCE_1_1_0_SEMANTICS` can be set
+    /// to enforce that all implementors have provided an override for this.
     #[cfg(not(enforce_1_1_0_semantics))]
     const ACK_1_1_0: bool = false;
 
