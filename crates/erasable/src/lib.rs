@@ -201,19 +201,68 @@ pub unsafe trait Erasable {
 
     /// Unerase this erased pointer.
     ///
-    /// Note that this _must_ be sound for erasable pointer types
-    /// with both unique/write provenance and shared/read provenance.
-    /// (In other words, both `&mut _` and `&_` can be unerased with this.)
+    /// Note that this _must_ be sound to roundtrip pointers with any provenance,
+    /// shared, unique, raw, frozen, mutable, and any valid combination thereof.
+    /// (In other words, `&mut _` and `&_` can be safely erased and unerased, and
+    /// any raw pointer should roundtrip without losing the provenance it had.)
     ///
     /// Concretely, this means that the resulting pointer _must_ be derived
     /// from the input pointer without any intervening references manifested.
-    /// Temporary shared references may be used in the implementation,
-    /// so long as the returned pointer is not derived from them.
+    /// Additionally, no references to the pointee _at all_ should be created,
+    /// as their mere temporary existence may impact the validity and
+    /// usable provenance of other pointers to the same location.
+    ///
+    /// Creating a shared reference sounds on the surface like it should be ok.
+    /// After all, you have a known-valid pointer to your type, and you can
+    /// borrow from whatever pointer was erased. However, in the face of raw
+    /// pointers with a shared mutable provenance, this is problematic.
+    /// If a write to the pointee location even potentially races with any
+    /// invocation of `unerase`, and it creates a reference to the location,
+    /// we have immediate undefined behavior for writing behind a shared ref.
+    ///
+    /// The root issue is that there may be external synchronization that this
+    /// implementation has no way of knowing about. An implementation of this
+    /// trait must only read the mimimum amount of data required to re-type the
+    /// pointer, and must do so with a raw pointer read, or, if and only if
+    /// there is a known `UnsafeCell` point (such as an atomic), a reference to
+    /// that `UnsafeCell` point and the safe API of that `UnsafeCell` point.
     ///
     /// # Safety
     ///
     /// The erased pointer must have been created by `erase`ing a valid pointer.
     unsafe fn unerase(this: ErasedPtr) -> ptr::NonNull<Self>;
+
+    /// Whether this implementor has acknowledged the 1.1.0 update to
+    /// `unerase`'s documented implementation requirements.
+    ///
+    /// Prior to 1.0.0, creating a temporary shared reference (`&_`) in
+    /// `unerase` was explicitly listed as allowed, but for the 1.1.0 release
+    /// it was determined that this in fact can cause problems for some use
+    /// cases that `Erasable` is designed to support.
+    ///
+    /// Implementing this as `false` is _not allowed_ and is _not_ permission
+    /// to create references within `unerase`. It only exists as a way to
+    /// make the soundness fix in 1.1.0 disallowing references not breaking.
+    /// You _must_ override this with a value of `true` and follow the current
+    /// documented requirements for `unerase`, and not create references.
+    ///
+    /// If your use of `unerase` would be problematic if it creates a temporary
+    /// shared reference, you should assert that this value is `true`.
+    /// Not doing so will expose you to potentially unsound implementations
+    /// written against 1.0.0 before the reference clarification was made.
+    ///
+    /// The environment variable `ACK_1_1_0` can be set to enforce that all
+    /// implementors have provided an override for this acknowledgement.
+    #[cfg(not(enforce_1_1_0_semantics))]
+    const ACK_1_1_0: bool = false;
+
+    /// Whether this implementor has acknowledged the 1.1.0 update to
+    /// `unerase`'s documented implementation requirements.
+    ///
+    /// Implementing this as `false` is _not allowed_.
+    /// You _must_ override this with a value of `true`.
+    #[cfg(enforce_1_1_0_semantics)]
+    const ACK_1_1_0: bool;
 }
 
 /// Erase a pointer.
@@ -557,6 +606,8 @@ unsafe impl<T: Sized> Erasable for T {
         // SAFETY: must not read the pointer for the safety of the impl directly below.
         this.cast()
     }
+
+    const ACK_1_1_0: bool = true;
 }
 
 // ~~~ impl ErasablePtr ~~~ //
