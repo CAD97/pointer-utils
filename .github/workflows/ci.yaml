@@ -76,7 +76,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: +nightly-2020-01-01
-          args: -Z generate-lockfile
+          args: -Z minimal-versions generate-lockfile
 
       - name: Cargo target cache
         uses: actions/cache@v1
