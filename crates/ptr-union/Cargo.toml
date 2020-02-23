@@ -1,6 +1,6 @@
 [package]
 name = "ptr-union"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2018"
 
 authors = ["Christopher Durham (cad97) <cad97@cad97.com>"]
@@ -19,10 +19,7 @@ default = ["alloc"]
 alloc = ["erasable/alloc"]
 
 [dependencies]
-paste = "0.1.6"
-
-# minimal-versions fix dtolnay/paste#15
-proc-macro-hack = "0.5.9"
+paste = "0.1.7"
 
 [dependencies.erasable]
 version = "1.0.0"
