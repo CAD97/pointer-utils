@@ -88,7 +88,10 @@
 
 extern crate alloc;
 
-use core::ptr::NonNull;
+#[cfg(has_ptr_slice_from_raw_parts)]
+use core::ptr::slice_from_raw_parts_mut as slice_from_raw_parts;
+#[cfg(not(has_ptr_slice_from_raw_parts))]
+use core::slice::from_raw_parts_mut as slice_from_raw_parts;
 #[cfg(feature = "erasable")]
 use erasable::{Erasable, ErasedPtr};
 use {
@@ -96,7 +99,7 @@ use {
         alloc::{alloc, handle_alloc_error},
         boxed::Box,
     },
-    core::{alloc::Layout, ptr, slice},
+    core::{alloc::Layout, mem::ManuallyDrop, ptr, slice},
 };
 
 /// A custom slice-based dynamically sized type.
@@ -221,7 +224,7 @@ unsafe impl<Header, Item> SliceDst for SliceWithHeader<Header, Item> {
         Self::layout(len).0
     }
 
-    fn retype(ptr: NonNull<[()]>) -> NonNull<Self> {
+    fn retype(ptr: ptr::NonNull<[()]>) -> ptr::NonNull<Self> {
         unsafe { ptr::NonNull::new_unchecked(ptr.as_ptr() as *mut _) }
     }
 }
@@ -246,30 +249,91 @@ impl<Header, Item> SliceWithHeader<Header, Item> {
         I: IntoIterator<Item = Item>,
         I::IntoIter: ExactSizeIterator,
     {
-        let mut items = items.into_iter();
+        let items = items.into_iter();
         let len = items.len();
-        let (layout, [length_offset, header_offset, slice_offset]) = Self::layout(len);
 
-        unsafe {
-            A::new_slice_dst(len, |ptr| {
-                let raw = ptr.as_ptr().cast::<u8>();
-                ptr::write(raw.add(length_offset).cast(), len);
-                ptr::write(raw.add(header_offset).cast(), header);
-                let mut slice_ptr = raw.add(slice_offset).cast::<Item>();
-                for _ in 0..len {
-                    let item = items
-                        .next()
-                        .expect("ExactSizeIterator over-reported length");
-                    ptr::write(slice_ptr, item);
-                    slice_ptr = slice_ptr.offset(1);
-                }
-                assert!(
-                    items.next().is_none(),
-                    "ExactSizeIterator under-reported length"
-                );
-                assert_eq!(layout, Layout::for_value(ptr.as_ref()));
-            })
+        struct InProgress<Header, Item> {
+            raw: ptr::NonNull<SliceWithHeader<Header, Item>>,
+            written: usize,
+            layout: Layout,
+            length_offset: usize,
+            header_offset: usize,
+            slice_offset: usize,
         }
+
+        impl<Header, Item> Drop for InProgress<Header, Item> {
+            fn drop(&mut self) {
+                unsafe {
+                    ptr::drop_in_place(slice_from_raw_parts(
+                        self.raw().add(self.slice_offset).cast::<Item>(),
+                        self.written,
+                    ));
+                }
+            }
+        }
+
+        impl<Header, Item> InProgress<Header, Item> {
+            fn init(
+                len: usize,
+                header: Header,
+                mut items: impl Iterator<Item = Item> + ExactSizeIterator,
+            ) -> impl FnOnce(ptr::NonNull<SliceWithHeader<Header, Item>>) {
+                move |ptr| {
+                    let mut this = Self::new(len, ptr);
+
+                    unsafe {
+                        for _ in 0..len {
+                            let item = items
+                                .next()
+                                .expect("ExactSizeIterator over-reported length");
+                            this.push(item);
+                        }
+
+                        assert!(
+                            items.next().is_none(),
+                            "ExactSizeIterator under-reported length"
+                        );
+
+                        this.finish(len, header)
+                    }
+                }
+            }
+
+            fn raw(&self) -> *mut u8 {
+                self.raw.as_ptr().cast()
+            }
+
+            fn new(len: usize, raw: ptr::NonNull<SliceWithHeader<Header, Item>>) -> Self {
+                let (layout, [length_offset, header_offset, slice_offset]) =
+                    SliceWithHeader::<Header, Item>::layout(len);
+                InProgress {
+                    raw,
+                    written: 0,
+                    layout,
+                    length_offset,
+                    header_offset,
+                    slice_offset,
+                }
+            }
+
+            unsafe fn push(&mut self, item: Item) {
+                self.raw()
+                    .add(self.slice_offset)
+                    .cast::<Item>()
+                    .add(self.written)
+                    .write(item);
+                self.written += 1;
+            }
+
+            unsafe fn finish(self, len: usize, header: Header) {
+                let this = ManuallyDrop::new(self);
+                ptr::write(this.raw().add(this.length_offset).cast(), len);
+                ptr::write(this.raw().add(this.header_offset).cast(), header);
+                debug_assert_eq!(this.layout, Layout::for_value(this.raw.as_ref()))
+            }
+        }
+
+        unsafe { A::new_slice_dst(len, InProgress::init(len, header, items)) }
     }
 }
 
@@ -286,11 +350,6 @@ where
 #[cfg(feature = "erasable")]
 unsafe impl<Header, Item> Erasable for SliceWithHeader<Header, Item> {
     unsafe fn unerase(this: ErasedPtr) -> ptr::NonNull<Self> {
-        #[cfg(not(has_ptr_slice_from_raw_parts))]
-        let slice_from_raw_parts = slice::from_raw_parts_mut::<()>;
-        #[cfg(has_ptr_slice_from_raw_parts)]
-        let slice_from_raw_parts = ptr::slice_from_raw_parts_mut::<()>;
-
         let len: usize = ptr::read(this.as_ptr().cast());
         let raw = ptr::NonNull::new_unchecked(slice_from_raw_parts(this.as_ptr().cast(), len));
         Self::retype(raw)
