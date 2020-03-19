@@ -57,7 +57,7 @@ fn bad_exactsizeiterator() {
     let mut counter = AtomicUsize::new(0);
     let _ = std::panic::catch_unwind(|| {
         let _: Box<_> = SliceWithHeader::new::<Box<_>, _>(
-            (),
+            DropTracking::new(&counter),
             Iter {
                 counter: &counter,
                 len: 5,
