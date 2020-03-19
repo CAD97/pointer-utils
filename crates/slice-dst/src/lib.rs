@@ -96,7 +96,7 @@ use core::slice::from_raw_parts_mut as slice_from_raw_parts;
 use erasable::{Erasable, ErasedPtr};
 use {
     alloc::{
-        alloc::{alloc, handle_alloc_error},
+        alloc::{alloc, dealloc, handle_alloc_error},
         boxed::Box,
     },
     core::{alloc::Layout, mem::ManuallyDrop, ptr, slice},
@@ -198,9 +198,31 @@ unsafe impl<S: ?Sized + SliceDst> AllocSliceDst<S> for Box<S> {
     where
         I: FnOnce(ptr::NonNull<S>),
     {
-        let ptr = alloc_slice_dst(len);
-        init(ptr);
-        Box::from_raw(ptr.as_ptr())
+        struct RawBox<S: ?Sized + SliceDst>(ptr::NonNull<S>, Layout);
+
+        impl<S: ?Sized + SliceDst> RawBox<S> {
+            unsafe fn new(len: usize) -> Self {
+                let layout = S::layout_for(len);
+                RawBox(alloc_slice_dst(len), layout)
+            }
+
+            unsafe fn finalize(self) -> Box<S> {
+                let this = ManuallyDrop::new(self);
+                Box::from_raw(this.0.as_ptr())
+            }
+        }
+
+        impl<S: ?Sized + SliceDst> Drop for RawBox<S> {
+            fn drop(&mut self) {
+                unsafe {
+                    dealloc(self.0.as_ptr().cast(), self.1);
+                }
+            }
+        }
+
+        let ptr = RawBox::new(len);
+        init(ptr.0);
+        ptr.finalize()
     }
 }
 
