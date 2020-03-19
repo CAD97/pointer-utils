@@ -3,6 +3,7 @@ delete-merged-branches = true
 
 status = [
   "Clippy",
+  "Miri",
   "MSRV Tests",
   "Rustfmt",
   "Tests",
