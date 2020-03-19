@@ -95,6 +95,12 @@ in the 1.1 line, and urge you to upgrade to 1.2 as soon as possible.
   [#45]: <https://github.com/CAD97/pointer-utils/pull/45>
   [#47]: <https://github.com/CAD97/pointer-utils/pull/47>
 
+#### Improvements
+- Previously, construction of a thin slice DST would leak the allocated memory if
+  a panic occurred during construction. [#44] fixes most cases to clean up proplerly.
+
+  [#44]: <https://github.com/CAD97/pointer-utils/pull/44>
+
 ### 1.1.0
 #### Soundness Fixes
 - `alloc_slice_dst`(`_in`) now properly support zero-sized types.
