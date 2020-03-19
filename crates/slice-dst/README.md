@@ -80,15 +80,20 @@ in exchange for moving node payloads to the heap alongside the children array.
 - `alloc_slice_dst`(`_in`) accidentally improperly used [`slice::from_raw_parts_mut`]
   instead of [`ptr::slice_from_raw_parts_mut`], even when the latter is available on
   Rust version `^1.42.0`. For more information, see [the fix PR][#45].
-  
-  This fix only has an impact if you are using Rust 1.42 or higher, and does not
-  cause any known miscompilations (nor even fail miri). However, out of an
-  abundance of caution, we have still seen fit to yank all versions of slice-dst
-  in the 1.1 line, and urge you to upgrade to 1.2 as soon as possible.
+
+- The buildscript checking for [`ptr::slice_from_raw_parts_mut`]'s stabilization was
+  bugged, and always failed, leaving code using [`slice::from_raw_parts_mut`] instead.
+  For technical details, see [the fix PR][#47].
+
+These fixes only have an impact if you are using Rust 1.42 or higher, and do not
+cause any known miscompilations (nor even fail miri). However, out of an
+abundance of caution, we have still seen fit to yank all versions of slice-dst
+in the 1.1 line, and urge you to upgrade to 1.2 as soon as possible.
 
   [`slice::from_raw_parts_mut`]: <https://doc.rust-lang.org/std/slice/fn.from_raw_parts_mut.html>
   [`ptr::slice_from_raw_parts_mut`]: <https://doc.rust-lang.org/std/ptr/fn.slice_from_raw_parts_mut.html>
   [#45]: <https://github.com/CAD97/pointer-utils/pull/45>
+  [#45]: <https://github.com/CAD97/pointer-utils/pull/47>
 
 ### 1.1.0
 #### Soundness Fixes
