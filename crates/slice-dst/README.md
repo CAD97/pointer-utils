@@ -93,7 +93,7 @@ in the 1.1 line, and urge you to upgrade to 1.2 as soon as possible.
   [`slice::from_raw_parts_mut`]: <https://doc.rust-lang.org/std/slice/fn.from_raw_parts_mut.html>
   [`ptr::slice_from_raw_parts_mut`]: <https://doc.rust-lang.org/std/ptr/fn.slice_from_raw_parts_mut.html>
   [#45]: <https://github.com/CAD97/pointer-utils/pull/45>
-  [#45]: <https://github.com/CAD97/pointer-utils/pull/47>
+  [#47]: <https://github.com/CAD97/pointer-utils/pull/47>
 
 ### 1.1.0
 #### Soundness Fixes
