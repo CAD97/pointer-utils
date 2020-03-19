@@ -5,7 +5,7 @@ So long as the size lines up with what it should be, once the metadata is create
 Rust actually already handles the DSTs it already supports perfectly well, safely!
 Setting them up is the hard part, which this crate handles for you.
 
-# Examples
+## Examples
 
 We have a tree structure! Each node holds some data and its children array.
 In normal Rust, you would probably typically implement it something like this:
@@ -72,6 +72,27 @@ The exact times you will want to use this rather than just standard types varrie
 This is mostly useful when space optimization is very important.
 This is still useful when using an arena: it reduces the allocations in the arena
 in exchange for moving node payloads to the heap alongside the children array.
+
+## Changelist
+
+### 1.2.0
+#### Soundness Fixes
+- `alloc_slice_dst`(`_in`) accidentally improperly used [`slice::from_raw_parts_mut`]
+  instead of [`ptr::slice_from_raw_parts_mut`], even when the latter is available on
+  Rust version `^1.42.0`. For more information, see [the fix PR][#45].
+  
+  This fix only has an impact if you are using Rust 1.42 or higher, and does not
+  cause any known miscompilations (nor even fail miri). However, out of an
+  abundance of caution, we have still seen fit to yank all versions of slice-dst
+  in the 1.1 line, and urge you to upgrade to 1.2 as soon as possible.
+
+  [`slice::from_raw_parts_mut`]: <https://doc.rust-lang.org/std/slice/fn.from_raw_parts_mut.html>
+  [`ptr::slice_from_raw_parts_mut`]: <https://doc.rust-lang.org/std/ptr/fn.slice_from_raw_parts_mut.html>
+  [#45]: <https://github.com/CAD97/pointer-utils/pull/45>
+
+### 1.1.0
+#### Soundness Fixes
+- `alloc_slice_dst`(`_in`) now properly support zero-sized types.
 
 ## Related Crates
 
