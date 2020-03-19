@@ -1,8 +1,13 @@
 use {
     slice_dst::*,
     std::{
-        panic,
-        sync::atomic::{AtomicUsize, Ordering::SeqCst},
+        alloc::Layout,
+        panic, ptr,
+        rc::Rc,
+        sync::{
+            atomic::{AtomicUsize, Ordering::SeqCst},
+            Arc,
+        },
     },
 };
 
@@ -65,4 +70,34 @@ fn bad_exactsizeiterator() {
         );
     });
     assert_eq!(*counter.get_mut(), 0);
+}
+
+struct S(u8);
+
+unsafe impl SliceDst for S {
+    fn layout_for(_: usize) -> Layout {
+        Layout::new::<S>()
+    }
+
+    fn retype(ptr: ptr::NonNull<[()]>) -> ptr::NonNull<Self> {
+        ptr.cast()
+    }
+}
+
+#[test]
+#[cfg_attr(
+    all(miri, target_os = "windows"),
+    ignore = "miri does not support panicking on windows rust-lang/miri#1059"
+)]
+fn panic_in_init() {
+    // This relies on miri to catch leaks
+    let _ = std::panic::catch_unwind(|| {
+        let _: Box<S> = unsafe { AllocSliceDst::new_slice_dst(0, |_| panic!()) };
+    });
+    let _ = std::panic::catch_unwind(|| {
+        let _: Arc<S> = unsafe { AllocSliceDst::new_slice_dst(0, |_| panic!()) };
+    });
+    let _ = std::panic::catch_unwind(|| {
+        let _: Rc<S> = unsafe { AllocSliceDst::new_slice_dst(0, |_| panic!()) };
+    });
 }
