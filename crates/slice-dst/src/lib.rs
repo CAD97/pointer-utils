@@ -99,7 +99,7 @@ use {
         alloc::{alloc, dealloc, handle_alloc_error},
         boxed::Box,
     },
-    core::{alloc::Layout, mem::ManuallyDrop, ptr, slice},
+    core::{alloc::Layout, mem::ManuallyDrop, ptr},
 };
 
 /// A custom slice-based dynamically sized type.
@@ -173,7 +173,7 @@ where
             ptr::NonNull::new(alloc(layout) as *mut ())
         }
         .unwrap_or_else(|| handle_alloc_error(layout));
-        let ptr = ptr::NonNull::new_unchecked(slice::from_raw_parts_mut::<()>(ptr.as_ptr(), len));
+        let ptr = ptr::NonNull::new_unchecked(slice_from_raw_parts(ptr.as_ptr(), len));
         S::retype(ptr)
     }
 }
