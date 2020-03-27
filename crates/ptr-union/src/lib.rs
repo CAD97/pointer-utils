@@ -18,26 +18,26 @@ use {
 
 const MASK_2: usize = 0b01;
 const MASK_4: usize = 0b11;
-const MASK_A: usize = 0b00;
-const MASK_B: usize = 0b01;
-const MASK_C: usize = 0b10;
-const MASK_D: usize = 0b11;
+const TAG_A: usize = 0b00;
+const TAG_B: usize = 0b01;
+const TAG_C: usize = 0b10;
+const TAG_D: usize = 0b11;
 
-fn check(ptr: ErasedPtr, mask: usize, value: usize) -> bool {
-    debug_assert_eq!(value & mask, value);
-    (ptr.as_ptr() as usize & mask) == value
+fn check_tag(ptr: ErasedPtr, mask: usize, tag: usize) -> bool {
+    debug_assert_eq!(tag & mask, tag);
+    (ptr.as_ptr() as usize & mask) == tag
 }
 
-fn mask(ptr: ErasedPtr, mask: usize, value: usize) -> ErasedPtr {
-    debug_assert_eq!(value & mask, value);
-    debug_assert!(check(ptr, mask, 0));
+fn set_tag(ptr: ErasedPtr, mask: usize, tag: usize) -> ErasedPtr {
+    debug_assert_eq!(tag & mask, tag);
+    debug_assert!(check_tag(ptr, mask, 0));
     let high = ptr.as_ptr() as usize & !mask;
-    let low = value & mask;
+    let low = tag & mask;
     unsafe { ErasedPtr::new_unchecked((high | low) as *mut _) }
 }
 
-fn unmask(ptr: ErasedPtr, mask: usize, value: usize) -> ErasedPtr {
-    debug_assert!(check(ptr, mask, value));
+fn unset_tag(ptr: ErasedPtr, mask: usize, tag: usize) -> ErasedPtr {
+    debug_assert!(check_tag(ptr, mask, tag));
     unsafe { ErasedPtr::new_unchecked((ptr.as_ptr() as usize & !mask) as *mut _) }
 }
 
@@ -140,7 +140,7 @@ impl<A, B, C, D> UnionBuilder<Union4<A, B, C, D>> {
 
 /// A pointer union of two pointer types.
 ///
-/// This is a tagged union of two pointer types such as `Box<T>`, `Arc<T>`, or `&T` that is only as
+/// This is an tagged union of two pointer types such as `Box<T>`, `Arc<T>`, or `&T` that is only as
 /// big as a pointer. This is accomplished by storing the tag in the alignment bits of the pointer.
 ///
 /// As such, the pointer must be aligned to at least `u16` (`#[repr(align(2))]`).
@@ -153,8 +153,9 @@ pub struct Union2<A, B> {
 
 /// A pointer union of three or four pointer types.
 ///
-/// This is a tagged union of two pointer types such as `Box<T>`, `Arc<T>`, or `&T` that is only as
-/// big as a pointer. This is accomplished by storing the tag in the alignment bits of the pointer.
+/// This is a tagged union of three or four pointer types such as `Box<T>`, `Arc<T>`, or `&T` that
+/// is only as big as a pointer. This is accomplished by storing the tag in the alignment bits of
+/// the pointer.
 ///
 /// As such, the pointer must be aligned to at least `u32` (`#[repr(align(4))]`).
 /// This is enforced through the use of [`UnionBuilder`].
@@ -175,7 +176,7 @@ impl<A: ErasablePtr, B: ErasablePtr> UnionBuilder<Union2<A, B>> {
     /// Construct a union at this variant.
     pub fn a(self, a: A) -> Union2<A, B> {
         Union2 {
-            raw: mask(A::erase(a), MASK_2, MASK_A),
+            raw: set_tag(A::erase(a), MASK_2, TAG_A),
             a: PhantomData,
             b: PhantomData,
         }
@@ -184,7 +185,7 @@ impl<A: ErasablePtr, B: ErasablePtr> UnionBuilder<Union2<A, B>> {
     /// Construct a union at this variant.
     pub fn b(self, b: B) -> Union2<A, B> {
         Union2 {
-            raw: mask(B::erase(b), MASK_2, MASK_B),
+            raw: set_tag(B::erase(b), MASK_2, TAG_B),
             a: PhantomData,
             b: PhantomData,
         }
@@ -197,7 +198,7 @@ impl<A: ErasablePtr, B: ErasablePtr, C: ErasablePtr, D: ErasablePtr>
     /// Construct a union at this variant.
     pub fn a(self, a: A) -> Union4<A, B, C, D> {
         Union4 {
-            raw: mask(A::erase(a), MASK_4, MASK_A),
+            raw: set_tag(A::erase(a), MASK_4, TAG_A),
             a: PhantomData,
             b: PhantomData,
             c: PhantomData,
@@ -208,7 +209,7 @@ impl<A: ErasablePtr, B: ErasablePtr, C: ErasablePtr, D: ErasablePtr>
     /// Construct a union at this variant.
     pub fn b(self, b: B) -> Union4<A, B, C, D> {
         Union4 {
-            raw: mask(B::erase(b), MASK_4, MASK_B),
+            raw: set_tag(B::erase(b), MASK_4, TAG_B),
             a: PhantomData,
             b: PhantomData,
             c: PhantomData,
@@ -219,7 +220,7 @@ impl<A: ErasablePtr, B: ErasablePtr, C: ErasablePtr, D: ErasablePtr>
     /// Construct a union at this variant.
     pub fn c(self, c: C) -> Union4<A, B, C, D> {
         Union4 {
-            raw: mask(C::erase(c), MASK_4, MASK_C),
+            raw: set_tag(C::erase(c), MASK_4, TAG_C),
             a: PhantomData,
             b: PhantomData,
             c: PhantomData,
@@ -230,7 +231,7 @@ impl<A: ErasablePtr, B: ErasablePtr, C: ErasablePtr, D: ErasablePtr>
     /// Construct a union at this variant.
     pub fn d(self, d: D) -> Union4<A, B, C, D> {
         Union4 {
-            raw: mask(D::erase(d), MASK_4, MASK_D),
+            raw: set_tag(D::erase(d), MASK_4, TAG_D),
             a: PhantomData,
             b: PhantomData,
             c: PhantomData,
@@ -246,7 +247,7 @@ macro_rules! union_methods {
                 paste::item! {
                     /// Check if the union is this variant.
                     pub fn [<is_ $a>](&self) -> bool {
-                        check(self.raw, $mask, [<MASK_ $A>])
+                        check_tag(self.raw, $mask, [<TAG_ $A>])
                     }
                 }
                 paste::item! {
@@ -255,7 +256,7 @@ macro_rules! union_methods {
                     /// Returns the union on error.
                     pub fn [<into_ $a>](self) -> Result<$A, Self> {
                         if self.[<is_ $a>]() {
-                            unsafe { Ok($A::unerase(unmask(self.raw, $mask, [<MASK_ $A>]))) }
+                            unsafe { Ok($A::unerase(unset_tag(self.raw, $mask, [<TAG_ $A>]))) }
                         } else {
                             Err(self)
                         }
@@ -266,7 +267,7 @@ macro_rules! union_methods {
                     pub fn [<with_ $a>]<R>(&self, f: impl FnOnce(&$A) -> R) -> Option<R> {
                         if self.[<is_ $a>]() {
                             unsafe {
-                                let $a = ManuallyDrop::new($A::unerase(unmask(self.raw, $mask, [<MASK_ $A>])));
+                                let $a = ManuallyDrop::new($A::unerase(unset_tag(self.raw, $mask, [<TAG_ $A>])));
                                 Some(f(&$a))
                             }
                         } else {
