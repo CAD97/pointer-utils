@@ -71,6 +71,16 @@ impl<U> fmt::Debug for UnionBuilder<U> {
 }
 
 impl<A, B> UnionBuilder<Union2<A, B>> {
+    /// Deprecated alias for [`UnionBuilder::new2`].
+    ///
+    /// The name conflicts with [`UnionBuilder::<Union4<_,_,_,_>>::new`](#method.new-1),
+    /// causing use to be more difficult than was desired.
+    #[allow(clippy::missing_safety_doc)]
+    #[deprecated(since = "1.1.0", note = "use `UnionBuilder::new2` instead")]
+    pub const unsafe fn new() -> Self {
+        Self::new2()
+    }
+
     /// Assert that creating pointer unions of these two types is safe.
     ///
     /// # Safety
@@ -85,7 +95,7 @@ impl<A, B> UnionBuilder<Union2<A, B>> {
     /// ```rust
     /// # use ptr_union::*;
     /// # unsafe {
-    /// UnionBuilder::<Union2<Box<u16>, &u32>>::new();
+    /// UnionBuilder::<Union2<Box<u16>, &u32>>::new2();
     /// # }
     /// ```
     ///
@@ -94,10 +104,10 @@ impl<A, B> UnionBuilder<Union2<A, B>> {
     /// ```rust
     /// # use ptr_union::*;
     /// # unsafe {
-    /// UnionBuilder::<Union2<Box<u16>, &u8>>::new();
+    /// UnionBuilder::<Union2<Box<u16>, &u8>>::new2();
     /// # }
     /// ```
-    pub const unsafe fn new() -> Self {
+    pub const unsafe fn new2() -> Self {
         UnionBuilder {
             private: PhantomData,
         }
@@ -105,6 +115,16 @@ impl<A, B> UnionBuilder<Union2<A, B>> {
 }
 
 impl<A, B, C, D> UnionBuilder<Union4<A, B, C, D>> {
+    /// Deprecated alias for [`UnionBuilder::new4`].
+    ///
+    /// The name conflicts with [`UnionBuilder::<Union2<_,_>>::new`](#method.new),
+    /// causing use to be more difficult than was desired.
+    #[allow(clippy::missing_safety_doc)]
+    #[deprecated(since = "1.1.0", note = "use `UnionBuilder::new4` instead")]
+    pub const unsafe fn new() -> Self {
+        Self::new4()
+    }
+
     /// Assert that creating pointer unions of these four types is safe.
     ///
     /// # Safety
@@ -119,7 +139,7 @@ impl<A, B, C, D> UnionBuilder<Union4<A, B, C, D>> {
     /// ```rust
     /// # use ptr_union::*; use std::sync::Arc;
     /// # unsafe {
-    /// UnionBuilder::<Union4<Box<u32>, &u32, Arc<u32>, Arc<u64>>>::new();
+    /// UnionBuilder::<Union4<Box<u32>, &u32, Arc<u32>, Arc<u64>>>::new4();
     /// # }
     /// ```
     ///
@@ -128,10 +148,10 @@ impl<A, B, C, D> UnionBuilder<Union4<A, B, C, D>> {
     /// ```rust
     /// # use ptr_union::*; use std::sync::Arc;
     /// # unsafe {
-    /// UnionBuilder::<Union4<Box<u16>, &u16, Arc<u16>, Arc<u64>>>::new();
+    /// UnionBuilder::<Union4<Box<u16>, &u16, Arc<u16>, Arc<u64>>>::new4();
     /// # }
     /// ```
-    pub const unsafe fn new() -> Self {
+    pub const unsafe fn new4() -> Self {
         UnionBuilder {
             private: PhantomData,
         }
@@ -307,6 +327,7 @@ macro_rules! union_methods {
             /// NB: Not safe generally!
             /// Because `as_deref_unchecked` only requires the actual reference is aligned.
             /// So it can be used for overaligned &T where not all &T are aligned enough.
+            #[allow(deprecated)]
             unsafe fn builder(&self) -> UnionBuilder<Self> {
                 UnionBuilder::<Self>::new()
             }
@@ -367,7 +388,7 @@ impl<A: ErasablePtr, B: ErasablePtr> Union2<A, B> {
         &'a A::Target: ErasablePtr,
         &'a B::Target: ErasablePtr,
     {
-        self.as_deref(UnionBuilder::<Union2<_, _>>::new())
+        self.as_deref(UnionBuilder::new2())
     }
 
     /// Unpack this union into an enum.
@@ -399,7 +420,7 @@ impl<A: ErasablePtr, B: ErasablePtr, C: ErasablePtr, D: ErasablePtr> Union4<A, B
         &'a C::Target: ErasablePtr,
         &'a D::Target: ErasablePtr,
     {
-        self.as_deref(UnionBuilder::<Union4<_, _, _, _>>::new())
+        self.as_deref(UnionBuilder::new4())
     }
 
     /// Unpack this union into an enum.
@@ -543,7 +564,7 @@ impl<A: ErasablePtr, B: ErasablePtr> Enum2<A, B> {
     ///
     /// The used pointer must align to at least `u16` (`#[repr(align(2))]`).
     pub unsafe fn pack_unchecked(self) -> Union2<A, B> {
-        self.pack(UnionBuilder::<Union2<A, B>>::new())
+        self.pack(UnionBuilder::new2())
     }
 }
 
@@ -564,6 +585,6 @@ impl<A: ErasablePtr, B: ErasablePtr, C: ErasablePtr, D: ErasablePtr> Enum4<A, B,
     ///
     /// The used pointer must align to at least `u32` (`#[repr(align(4))]`).
     pub unsafe fn pack_unchecked(self) -> Union4<A, B, C, D> {
-        self.pack(UnionBuilder::<Union4<A, B, C, D>>::new())
+        self.pack(UnionBuilder::new4())
     }
 }

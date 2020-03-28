@@ -25,11 +25,11 @@ struct BigC([u128; 16]);
 struct BigD([u128; 16]);
 
 const BIG_UNION_PROOF_2: UnionBuilder<Union2<Box<BigA>, Box<BigB>>> =
-    unsafe { UnionBuilder::<Union2<_, _>>::new() };
+    unsafe { UnionBuilder::new2() };
 const BIG_UNION_PROOF_3: UnionBuilder<Union4<Box<BigA>, Box<BigB>, Box<BigC>>> =
-    unsafe { UnionBuilder::<Union4<_, _, _>>::new() };
+    unsafe { UnionBuilder::new4() };
 const BIG_UNION_PROOF_4: UnionBuilder<Union4<Box<BigA>, Box<BigB>, Box<BigC>, Box<BigD>>> =
-    unsafe { UnionBuilder::<Union4<_, _, _, _>>::new() };
+    unsafe { UnionBuilder::new4() };
 
 #[test]
 fn smoke2() {

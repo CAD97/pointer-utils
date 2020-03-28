@@ -65,7 +65,7 @@ dependencies = [
 
 [[package]]
 name = "ptr-union"
-version = "1.0.1"
+version = "1.1.0"
 dependencies = [
  "autocfg",
  "erasable",
