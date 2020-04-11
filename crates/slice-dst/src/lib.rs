@@ -98,6 +98,8 @@ use {
     alloc::{
         alloc::{alloc, dealloc, handle_alloc_error},
         boxed::Box,
+        rc::Rc,
+        sync::Arc,
     },
     core::{alloc::Layout, mem::ManuallyDrop, ptr},
 };
@@ -380,10 +382,22 @@ unsafe impl<Header, Item> Erasable for SliceWithHeader<Header, Item> {
     const ACK_1_1_0: bool = true;
 }
 
+unsafe impl<S: ?Sized + SliceDst> AllocSliceDst<S> for Rc<S> {
+    unsafe fn new_slice_dst<I>(len: usize, init: I) -> Self
+    where
+        I: FnOnce(ptr::NonNull<S>),
+    {
+        Box::new_slice_dst(len, init).into()
+    }
+}
+
+unsafe impl<S: ?Sized + SliceDst> AllocSliceDst<S> for Arc<S> {
+    unsafe fn new_slice_dst<I>(len: usize, init: I) -> Self
+    where
+        I: FnOnce(ptr::NonNull<S>),
+    {
+        Box::new_slice_dst(len, init).into()
+    }
+}
+
 pub(crate) mod layout_polyfill;
-
-#[cfg(yolo_rc_layout_known)]
-mod yolo_rc_impls;
-
-#[cfg(not(yolo_rc_layout_known))]
-mod rc_impls;
