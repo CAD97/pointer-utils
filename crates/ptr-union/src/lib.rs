@@ -333,6 +333,19 @@ macro_rules! union_methods {
                 }
             }
         }
+
+        unsafe impl<$($A: ErasablePtr),*> ErasablePtr for $Union<$($A),*> {
+            fn erase(this: Self) -> ErasedPtr {
+                ManuallyDrop::new(this).raw
+            }
+
+            unsafe fn unerase(this: ErasedPtr) -> Self {
+                Self {
+                    raw: this,
+                    $($a: PhantomData,)*
+                }
+            }
+        }
     };
 }
 
