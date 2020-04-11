@@ -160,7 +160,7 @@ impl<A, B, C, D> UnionBuilder<Union4<A, B, C, D>> {
 
 /// A pointer union of two pointer types.
 ///
-/// This is an tagged union of two pointer types such as `Box<T>`, `Arc<T>`, or `&T` that is only as
+/// This is a tagged union of two pointer types such as `Box<T>`, `Arc<T>`, or `&T` that is only as
 /// big as a pointer. This is accomplished by storing the tag in the alignment bits of the pointer.
 ///
 /// As such, the pointer must be aligned to at least `u16` (`#[repr(align(2))]`).
