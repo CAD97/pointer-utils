@@ -235,7 +235,7 @@ pub unsafe trait Erasable {
     /// Whether this implementor has acknowledged the 1.1.0 update to
     /// `unerase`'s documented implementation requirements.
     ///
-    /// Prior to 1.0.0, creating a temporary shared reference (`&_`) in
+    /// Prior to 1.1.0, creating a temporary shared reference (`&_`) in
     /// `unerase` was explicitly listed as allowed, but for the 1.1.0 release
     /// it was determined that this in fact can cause problems for some use
     /// cases that `Erasable` is designed to support.

@@ -1,6 +1,6 @@
 [package]
 name = "rc-borrow"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2018"
 
 authors = ["Christopher Durham (cad97) <cad97@cad97.com>"]
@@ -19,7 +19,7 @@ default = ["erasable", "std"]
 std = []
 
 [dependencies.erasable]
-version = "1.0.0"
+version = "1.1.0"
 path = "../erasable"
 optional = true
 

@@ -14,7 +14,7 @@ checksum = "bb1f6b1ce1c140482ea30ddd3335fc0024ac7ee112895426e0a629a6c20adfe3"
 
 [[package]]
 name = "erasable"
-version = "1.1.0"
+version = "1.1.1"
 dependencies = [
  "autocfg",
  "either",
@@ -23,9 +23,9 @@ dependencies = [
 
 [[package]]
 name = "paste"
-version = "0.1.7"
+version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "63e1afe738d71b1ebab5f1207c055054015427dbfc7bbe9ee1266894156ec046"
+checksum = "ab4fb1930692d1b6a9cfabdde3d06ea0a7d186518e2f4d67660d8970e2fa647a"
 dependencies = [
  "paste-impl",
  "proc-macro-hack",
@@ -33,9 +33,9 @@ dependencies = [
 
 [[package]]
 name = "paste-impl"
-version = "0.1.7"
+version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d4dc4a7f6f743211c5aab239640a65091535d97d43d92a52bca435a640892bb"
+checksum = "a62486e111e571b1e93b710b61e8f493c0013be39629b714cb166bdb06aa5a8a"
 dependencies = [
  "proc-macro-hack",
  "proc-macro2",
@@ -65,7 +65,7 @@ dependencies = [
 
 [[package]]
 name = "ptr-union"
-version = "1.1.0"
+version = "1.2.0"
 dependencies = [
  "autocfg",
  "erasable",
@@ -83,7 +83,7 @@ dependencies = [
 
 [[package]]
 name = "rc-borrow"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "autocfg",
  "erasable",
@@ -104,7 +104,7 @@ checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
 
 [[package]]
 name = "slice-dst"
-version = "1.2.1"
+version = "1.3.0"
 dependencies = [
  "autocfg",
  "erasable",
