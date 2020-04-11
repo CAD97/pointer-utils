@@ -67,7 +67,7 @@ impl<T: ?Sized> RawRc<T> for Arc<T> {
     #[rustfmt::skip]
     fn as_raw(this: &Self) -> *const T {
         #[cfg(not(has_Arc__as_raw))] {
-            &**this
+            Arc::into_raw(unsafe { ptr::read(this) })
         }
         #[cfg(has_Arc__as_raw)] {
             Arc::as_raw(this)
@@ -89,7 +89,7 @@ impl<T: ?Sized> RawRc<T> for Rc<T> {
     #[rustfmt::skip]
     fn as_raw(this: &Self) -> *const T {
         #[cfg(not(has_Rc__as_raw))] {
-            &**this
+            Rc::into_raw(unsafe { ptr::read(this) })
         }
         #[cfg(has_Rc__as_raw)] {
             Rc::as_raw(this)

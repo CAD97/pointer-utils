@@ -18,26 +18,26 @@ use {
 
 const MASK_2: usize = 0b01;
 const MASK_4: usize = 0b11;
-const MASK_A: usize = 0b00;
-const MASK_B: usize = 0b01;
-const MASK_C: usize = 0b10;
-const MASK_D: usize = 0b11;
+const TAG_A: usize = 0b00;
+const TAG_B: usize = 0b01;
+const TAG_C: usize = 0b10;
+const TAG_D: usize = 0b11;
 
-fn check(ptr: ErasedPtr, mask: usize, value: usize) -> bool {
-    debug_assert_eq!(value & mask, value);
-    (ptr.as_ptr() as usize & mask) == value
+fn check_tag(ptr: ErasedPtr, mask: usize, tag: usize) -> bool {
+    debug_assert_eq!(tag & mask, tag);
+    (ptr.as_ptr() as usize & mask) == tag
 }
 
-fn mask(ptr: ErasedPtr, mask: usize, value: usize) -> ErasedPtr {
-    debug_assert_eq!(value & mask, value);
-    debug_assert!(check(ptr, mask, 0));
+fn set_tag(ptr: ErasedPtr, mask: usize, tag: usize) -> ErasedPtr {
+    debug_assert_eq!(tag & mask, tag);
+    debug_assert!(check_tag(ptr, mask, 0));
     let high = ptr.as_ptr() as usize & !mask;
-    let low = value & mask;
+    let low = tag & mask;
     unsafe { ErasedPtr::new_unchecked((high | low) as *mut _) }
 }
 
-fn unmask(ptr: ErasedPtr, mask: usize, value: usize) -> ErasedPtr {
-    debug_assert!(check(ptr, mask, value));
+fn unset_tag(ptr: ErasedPtr, mask: usize, tag: usize) -> ErasedPtr {
+    debug_assert!(check_tag(ptr, mask, tag));
     unsafe { ErasedPtr::new_unchecked((ptr.as_ptr() as usize & !mask) as *mut _) }
 }
 
@@ -71,6 +71,16 @@ impl<U> fmt::Debug for UnionBuilder<U> {
 }
 
 impl<A, B> UnionBuilder<Union2<A, B>> {
+    /// Deprecated alias for [`UnionBuilder::new2`].
+    ///
+    /// The name conflicts with [`UnionBuilder::<Union4<_,_,_,_>>::new`](#method.new-1),
+    /// causing use to be more difficult than was desired.
+    #[allow(clippy::missing_safety_doc)]
+    #[deprecated(since = "1.1.0", note = "use `UnionBuilder::new2` instead")]
+    pub const unsafe fn new() -> Self {
+        Self::new2()
+    }
+
     /// Assert that creating pointer unions of these two types is safe.
     ///
     /// # Safety
@@ -85,7 +95,7 @@ impl<A, B> UnionBuilder<Union2<A, B>> {
     /// ```rust
     /// # use ptr_union::*;
     /// # unsafe {
-    /// UnionBuilder::<Union2<Box<u16>, &u32>>::new();
+    /// UnionBuilder::<Union2<Box<u16>, &u32>>::new2();
     /// # }
     /// ```
     ///
@@ -94,10 +104,10 @@ impl<A, B> UnionBuilder<Union2<A, B>> {
     /// ```rust
     /// # use ptr_union::*;
     /// # unsafe {
-    /// UnionBuilder::<Union2<Box<u16>, &u8>>::new();
+    /// UnionBuilder::<Union2<Box<u16>, &u8>>::new2();
     /// # }
     /// ```
-    pub const unsafe fn new() -> Self {
+    pub const unsafe fn new2() -> Self {
         UnionBuilder {
             private: PhantomData,
         }
@@ -105,6 +115,16 @@ impl<A, B> UnionBuilder<Union2<A, B>> {
 }
 
 impl<A, B, C, D> UnionBuilder<Union4<A, B, C, D>> {
+    /// Deprecated alias for [`UnionBuilder::new4`].
+    ///
+    /// The name conflicts with [`UnionBuilder::<Union2<_,_>>::new`](#method.new),
+    /// causing use to be more difficult than was desired.
+    #[allow(clippy::missing_safety_doc)]
+    #[deprecated(since = "1.1.0", note = "use `UnionBuilder::new4` instead")]
+    pub const unsafe fn new() -> Self {
+        Self::new4()
+    }
+
     /// Assert that creating pointer unions of these four types is safe.
     ///
     /// # Safety
@@ -119,7 +139,7 @@ impl<A, B, C, D> UnionBuilder<Union4<A, B, C, D>> {
     /// ```rust
     /// # use ptr_union::*; use std::sync::Arc;
     /// # unsafe {
-    /// UnionBuilder::<Union4<Box<u32>, &u32, Arc<u32>, Arc<u64>>>::new();
+    /// UnionBuilder::<Union4<Box<u32>, &u32, Arc<u32>, Arc<u64>>>::new4();
     /// # }
     /// ```
     ///
@@ -128,10 +148,10 @@ impl<A, B, C, D> UnionBuilder<Union4<A, B, C, D>> {
     /// ```rust
     /// # use ptr_union::*; use std::sync::Arc;
     /// # unsafe {
-    /// UnionBuilder::<Union4<Box<u16>, &u16, Arc<u16>, Arc<u64>>>::new();
+    /// UnionBuilder::<Union4<Box<u16>, &u16, Arc<u16>, Arc<u64>>>::new4();
     /// # }
     /// ```
-    pub const unsafe fn new() -> Self {
+    pub const unsafe fn new4() -> Self {
         UnionBuilder {
             private: PhantomData,
         }
@@ -153,8 +173,9 @@ pub struct Union2<A, B> {
 
 /// A pointer union of three or four pointer types.
 ///
-/// This is a tagged union of two pointer types such as `Box<T>`, `Arc<T>`, or `&T` that is only as
-/// big as a pointer. This is accomplished by storing the tag in the alignment bits of the pointer.
+/// This is a tagged union of three or four pointer types such as `Box<T>`, `Arc<T>`, or `&T` that
+/// is only as big as a pointer. This is accomplished by storing the tag in the alignment bits of
+/// the pointer.
 ///
 /// As such, the pointer must be aligned to at least `u32` (`#[repr(align(4))]`).
 /// This is enforced through the use of [`UnionBuilder`].
@@ -175,7 +196,7 @@ impl<A: ErasablePtr, B: ErasablePtr> UnionBuilder<Union2<A, B>> {
     /// Construct a union at this variant.
     pub fn a(self, a: A) -> Union2<A, B> {
         Union2 {
-            raw: mask(A::erase(a), MASK_2, MASK_A),
+            raw: set_tag(A::erase(a), MASK_2, TAG_A),
             a: PhantomData,
             b: PhantomData,
         }
@@ -184,7 +205,7 @@ impl<A: ErasablePtr, B: ErasablePtr> UnionBuilder<Union2<A, B>> {
     /// Construct a union at this variant.
     pub fn b(self, b: B) -> Union2<A, B> {
         Union2 {
-            raw: mask(B::erase(b), MASK_2, MASK_B),
+            raw: set_tag(B::erase(b), MASK_2, TAG_B),
             a: PhantomData,
             b: PhantomData,
         }
@@ -197,7 +218,7 @@ impl<A: ErasablePtr, B: ErasablePtr, C: ErasablePtr, D: ErasablePtr>
     /// Construct a union at this variant.
     pub fn a(self, a: A) -> Union4<A, B, C, D> {
         Union4 {
-            raw: mask(A::erase(a), MASK_4, MASK_A),
+            raw: set_tag(A::erase(a), MASK_4, TAG_A),
             a: PhantomData,
             b: PhantomData,
             c: PhantomData,
@@ -208,7 +229,7 @@ impl<A: ErasablePtr, B: ErasablePtr, C: ErasablePtr, D: ErasablePtr>
     /// Construct a union at this variant.
     pub fn b(self, b: B) -> Union4<A, B, C, D> {
         Union4 {
-            raw: mask(B::erase(b), MASK_4, MASK_B),
+            raw: set_tag(B::erase(b), MASK_4, TAG_B),
             a: PhantomData,
             b: PhantomData,
             c: PhantomData,
@@ -219,7 +240,7 @@ impl<A: ErasablePtr, B: ErasablePtr, C: ErasablePtr, D: ErasablePtr>
     /// Construct a union at this variant.
     pub fn c(self, c: C) -> Union4<A, B, C, D> {
         Union4 {
-            raw: mask(C::erase(c), MASK_4, MASK_C),
+            raw: set_tag(C::erase(c), MASK_4, TAG_C),
             a: PhantomData,
             b: PhantomData,
             c: PhantomData,
@@ -230,7 +251,7 @@ impl<A: ErasablePtr, B: ErasablePtr, C: ErasablePtr, D: ErasablePtr>
     /// Construct a union at this variant.
     pub fn d(self, d: D) -> Union4<A, B, C, D> {
         Union4 {
-            raw: mask(D::erase(d), MASK_4, MASK_D),
+            raw: set_tag(D::erase(d), MASK_4, TAG_D),
             a: PhantomData,
             b: PhantomData,
             c: PhantomData,
@@ -246,7 +267,7 @@ macro_rules! union_methods {
                 paste::item! {
                     /// Check if the union is this variant.
                     pub fn [<is_ $a>](&self) -> bool {
-                        check(self.raw, $mask, [<MASK_ $A>])
+                        check_tag(self.raw, $mask, [<TAG_ $A>])
                     }
                 }
                 paste::item! {
@@ -255,7 +276,7 @@ macro_rules! union_methods {
                     /// Returns the union on error.
                     pub fn [<into_ $a>](self) -> Result<$A, Self> {
                         if self.[<is_ $a>]() {
-                            unsafe { Ok($A::unerase(unmask(self.raw, $mask, [<MASK_ $A>]))) }
+                            unsafe { Ok($A::unerase(unset_tag(self.raw, $mask, [<TAG_ $A>]))) }
                         } else {
                             Err(self)
                         }
@@ -266,7 +287,7 @@ macro_rules! union_methods {
                     pub fn [<with_ $a>]<R>(&self, f: impl FnOnce(&$A) -> R) -> Option<R> {
                         if self.[<is_ $a>]() {
                             unsafe {
-                                let $a = ManuallyDrop::new($A::unerase(unmask(self.raw, $mask, [<MASK_ $A>])));
+                                let $a = ManuallyDrop::new($A::unerase(unset_tag(self.raw, $mask, [<TAG_ $A>])));
                                 Some(f(&$a))
                             }
                         } else {
@@ -306,6 +327,7 @@ macro_rules! union_methods {
             /// NB: Not safe generally!
             /// Because `as_deref_unchecked` only requires the actual reference is aligned.
             /// So it can be used for overaligned &T where not all &T are aligned enough.
+            #[allow(deprecated)]
             unsafe fn builder(&self) -> UnionBuilder<Self> {
                 UnionBuilder::<Self>::new()
             }
@@ -366,7 +388,7 @@ impl<A: ErasablePtr, B: ErasablePtr> Union2<A, B> {
         &'a A::Target: ErasablePtr,
         &'a B::Target: ErasablePtr,
     {
-        self.as_deref(UnionBuilder::<Union2<_, _>>::new())
+        self.as_deref(UnionBuilder::new2())
     }
 
     /// Unpack this union into an enum.
@@ -398,7 +420,7 @@ impl<A: ErasablePtr, B: ErasablePtr, C: ErasablePtr, D: ErasablePtr> Union4<A, B
         &'a C::Target: ErasablePtr,
         &'a D::Target: ErasablePtr,
     {
-        self.as_deref(UnionBuilder::<Union4<_, _, _, _>>::new())
+        self.as_deref(UnionBuilder::new4())
     }
 
     /// Unpack this union into an enum.
@@ -542,7 +564,7 @@ impl<A: ErasablePtr, B: ErasablePtr> Enum2<A, B> {
     ///
     /// The used pointer must align to at least `u16` (`#[repr(align(2))]`).
     pub unsafe fn pack_unchecked(self) -> Union2<A, B> {
-        self.pack(UnionBuilder::<Union2<A, B>>::new())
+        self.pack(UnionBuilder::new2())
     }
 }
 
@@ -563,6 +585,6 @@ impl<A: ErasablePtr, B: ErasablePtr, C: ErasablePtr, D: ErasablePtr> Enum4<A, B,
     ///
     /// The used pointer must align to at least `u32` (`#[repr(align(4))]`).
     pub unsafe fn pack_unchecked(self) -> Union4<A, B, C, D> {
-        self.pack(UnionBuilder::<Union4<A, B, C, D>>::new())
+        self.pack(UnionBuilder::new4())
     }
 }

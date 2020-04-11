@@ -18,6 +18,14 @@ fn slice() {
 }
 
 #[test]
+fn str() {
+    let s = "my string is an awesome string";
+    let s: Box<StrWithHeader<()>> = StrWithHeader::new((), s);
+    assert_eq!(&s.str, "my string is an awesome string");
+    let s = s.clone();
+}
+
+#[test]
 fn zst() {
     let slice: Vec<()> = vec![(); 16];
     let slice: Box<SliceWithHeader<(), ()>> = SliceWithHeader::new((), slice);

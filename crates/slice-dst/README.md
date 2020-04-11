@@ -75,6 +75,11 @@ in exchange for moving node payloads to the heap alongside the children array.
 
 ## Changelist
 
+### 1.3.0
+#### Additions
+
+- Added a `StrWithHeader` type, counterpart to `SliceWithHeader`, but with a `str`.
+
 ### 1.2.0
 #### Soundness Fixes
 - `alloc_slice_dst`(`_in`) accidentally improperly used [`slice::from_raw_parts_mut`]
@@ -97,7 +102,7 @@ in the 1.1 line, and urge you to upgrade to 1.2 as soon as possible.
 
 #### Improvements
 - Previously, construction of a thin slice DST would leak the allocated memory if
-  a panic occurred during construction. [#44] fixes most cases to clean up proplerly.
+  a panic occurred during construction. [#44] fixes most cases to clean up properly.
 
   [#44]: <https://github.com/CAD97/pointer-utils/pull/44>
 
