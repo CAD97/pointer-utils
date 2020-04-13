@@ -32,6 +32,11 @@ const BIG_UNION_PROOF_4: UnionBuilder<Union4<Box<BigA>, Box<BigB>, Box<BigC>, Bo
     unsafe { UnionBuilder::new4() };
 
 #[test]
+fn smoke() {
+    let a = BIG_UNION_PROOF_2.a(Default::default());
+}
+
+#[test]
 fn smoke2() {
     let a = BIG_UNION_PROOF_2.a(Default::default());
     let b = BIG_UNION_PROOF_2.b(Default::default());
