@@ -1,6 +1,34 @@
 Pointer union types the size of a pointer
 by storing the tag in the alignment bits.
 
+## Changelist
+
+### 2.0.0
+#### Fixes
+
+- Union types now drop their contents properly. (Whoops!)
+  This is a breaking change for two main reasons:
+
+  - Trait bounds must be added to the union type to have them on `Drop`
+  - `Copy` can no longer be provided for unions of `Copy` pointers,
+    because `Drop` and `Copy` are mutually exclusive.
+
+  I also took this opportunity to clean up the builder proof API a little,
+  as the previous shape was more difficult to use than intended.
+
+#### How did this happen
+
+We do run the test suite for this crate under [miri]. In fact, miri is how the
+leak was diagnosed and ensured to be fixed. However, the test suite previously
+did not actually attempt to drop any pointer union, and the author thought that
+it did. This combination let the lack of a `Drop` impl be overlooked.
+
+#### Using previous versions
+
+In short, you're better off not. However, if you must for some reason,
+make sure that any time you drop a pointer union, you call `unpack`.
+This will ensure that the inner types are properly dropped instead of leaking.
+
 ## Related Crates
 
 - [`erasable`](https://lib.rs/crates/erasable): Erase pointers of their concrete type.

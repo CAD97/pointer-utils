@@ -1,15 +1,9 @@
 //! These tests don't really assert anything, they just exercise the API.
 //! This is primarily intended to be run under miri as a sanitizer.
 
-#![allow(
-    unused,
-    clippy::redundant_clone,
-    clippy::borrowed_box,
-    clippy::type_complexity,
-    clippy::drop_ref
-)]
+#![allow(clippy::borrowed_box, clippy::drop_ref)]
 
-use ptr_union::{Union2, Union4, UnionBuilder};
+use ptr_union::{Builder2, Builder4};
 
 #[repr(align(4))]
 #[derive(Debug, Default, Clone)]
@@ -24,12 +18,24 @@ struct BigC([u128; 16]);
 #[derive(Debug, Default, Clone)]
 struct BigD([u128; 16]);
 
-const BIG_UNION_PROOF_2: UnionBuilder<Union2<Box<BigA>, Box<BigB>>> =
-    unsafe { UnionBuilder::new2() };
-const BIG_UNION_PROOF_3: UnionBuilder<Union4<Box<BigA>, Box<BigB>, Box<BigC>>> =
-    unsafe { UnionBuilder::new4() };
-const BIG_UNION_PROOF_4: UnionBuilder<Union4<Box<BigA>, Box<BigB>, Box<BigC>, Box<BigD>>> =
-    unsafe { UnionBuilder::new4() };
+const BIG_UNION_PROOF_2: Builder2<Box<BigA>, Box<BigB>> = unsafe { Builder2::new_unchecked() };
+const BIG_UNION_PROOF_3: Builder4<Box<BigA>, Box<BigB>, Box<BigC>> =
+    unsafe { Builder4::new_unchecked() };
+const BIG_UNION_PROOF_4: Builder4<Box<BigA>, Box<BigB>, Box<BigC>, Box<BigD>> =
+    unsafe { Builder4::new_unchecked() };
+
+#[test]
+fn smoke() {
+    let _ = BIG_UNION_PROOF_2.a(Default::default());
+    let _ = BIG_UNION_PROOF_2.b(Default::default());
+    let _ = BIG_UNION_PROOF_3.a(Default::default());
+    let _ = BIG_UNION_PROOF_3.b(Default::default());
+    let _ = BIG_UNION_PROOF_3.c(Default::default());
+    let _ = BIG_UNION_PROOF_4.a(Default::default());
+    let _ = BIG_UNION_PROOF_4.b(Default::default());
+    let _ = BIG_UNION_PROOF_4.c(Default::default());
+    let _ = BIG_UNION_PROOF_4.d(Default::default());
+}
 
 #[test]
 fn smoke2() {
