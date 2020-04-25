@@ -341,6 +341,7 @@ impl<P: ErasablePtr> Thin<P> {
         f(&mut this)
     }
 
+    /// Check two thin pointers for pointer equivalence.
     pub fn ptr_eq<Q: ErasablePtr>(this: &Self, that: &Thin<Q>) -> bool {
         this.ptr == that.ptr
     }
