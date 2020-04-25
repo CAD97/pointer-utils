@@ -18,6 +18,11 @@ There are two main useful reasons to type erase pointers in Rust:
 
 ## Changelist
 
+### 1.2.0
+#### Added
+- `impl ErasablePtr for Thin<P>`: the obvious impl; `Thin` is erased internally
+- `Thin::ptr_eq`: easily compare pointer equality of two thin pointers
+
 ### 1.1.0
 #### Breaking changes
 

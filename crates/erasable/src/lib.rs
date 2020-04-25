@@ -340,6 +340,10 @@ impl<P: ErasablePtr> Thin<P> {
         };
         f(&mut this)
     }
+
+    pub fn ptr_eq<Q: ErasablePtr>(this: &Self, that: &Thin<Q>) -> bool {
+        this.ptr == that.ptr
+    }
 }
 
 impl<P: ErasablePtr> Drop for Thin<P> {
@@ -630,6 +634,19 @@ where
 
     unsafe fn unerase(this: ErasedPtr) -> Self {
         T::unerase(this)
+    }
+}
+
+unsafe impl<P: ErasablePtr> ErasablePtr for Thin<P> {
+    fn erase(this: Self) -> ErasedPtr {
+        ManuallyDrop::new(this).ptr
+    }
+
+    unsafe fn unerase(this: ErasedPtr) -> Self {
+        Thin {
+            ptr: this,
+            marker: PhantomData,
+        }
     }
 }
 
