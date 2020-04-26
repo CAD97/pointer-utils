@@ -107,6 +107,14 @@ impl<T: ?Sized> RawRc<T> for Rc<T> {
     }
 }
 
+// sigh, I almost got away without this...
+macro_rules! doc_comment {
+    ($doc:expr, $($tt:tt)*) => {
+        #[doc = $doc]
+        $($tt)*
+    };
+}
+
 macro_rules! rc_borrow {
     ($($(#[$m:meta])* $vis:vis struct $RcBorrow:ident = &$Rc:ident;)*) => {$(
         $(#[$m])*
@@ -141,6 +149,28 @@ macro_rules! rc_borrow {
             /// whereas dereferencing gives a temporary borrow.
             $vis fn downgrade(this: Self) -> &'a T {
                 unsafe { &*this.raw.as_ptr() }
+            }
+
+            /// Get a raw pointer that can be used with `from_raw`.
+            $vis fn into_raw(this: Self) -> *const T {
+                ManuallyDrop::new(this).raw.as_ptr()
+            }
+
+            doc_comment! {
+                concat!("\
+Construct a new `", stringify!($RcBorrow), "` from a raw pointer.
+
+The raw pointer must have been previously returned by a call to
+`",stringify!($RcBorrow),"<U>::into_raw` or `",stringify!($Rc),"<U>::as_raw`
+where `U` must have the same size and alignment as `T`. This is trivially true
+if `U` is `T`. Note that if `U` is not `T`, this is a pointer cast (transmute)
+between the two types, and the types must be transmute-compatible."),
+                $vis unsafe fn from_raw(ptr: *const T) -> Self {
+                    $RcBorrow {
+                        raw: ptr::NonNull::new_unchecked(ptr as *mut T),
+                        marker: PhantomData
+                    }
+                }
             }
         }
 
