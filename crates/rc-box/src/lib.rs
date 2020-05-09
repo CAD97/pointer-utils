@@ -18,6 +18,8 @@ extern crate std;
 
 #[cfg(feature = "erasable")]
 use erasable::{Erasable, ErasablePtr, ErasedPtr};
+#[cfg(feature = "slice-dst")]
+use slice_dst::{AllocSliceDst, SliceDst, TryAllocSliceDst};
 #[cfg(feature = "std")]
 use std::panic::UnwindSafe;
 use {
@@ -349,6 +351,25 @@ then the data will be pinned in memory and unable to be moved."),
 
             unsafe fn unerase(this: ErasedPtr) -> Self {
                 $RcBox::from_raw(T::unerase(this).as_ptr())
+            }
+        }
+
+        #[cfg(feature = "slice-dst")]
+        unsafe impl<S: ?Sized + SliceDst> AllocSliceDst<S> for $RcBox<S> {
+            unsafe fn new_slice_dst<I>(len: usize, init: I) -> Self
+            where
+                I: FnOnce(ptr::NonNull<S>),
+            {
+                Self::from_unchecked($Rc::new_slice_dst(len, init))
+            }
+        }
+        #[cfg(feature = "slice-dst")]
+        unsafe impl<S: ?Sized + SliceDst> TryAllocSliceDst<S> for $RcBox<S> {
+            unsafe fn try_new_slice_dst<I, E>(len: usize, init: I) -> Result<Self, E>
+            where
+                I: FnOnce(ptr::NonNull<S>) -> Result<(), E>,
+            {
+                $Rc::try_new_slice_dst(len, init).map(|x| Self::from_unchecked(x))
             }
         }
 
