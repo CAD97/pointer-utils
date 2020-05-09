@@ -22,6 +22,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "erasable"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c18404d99ecdee16598948437ef1a18b94c74f4d3a374cd41f642626c2c57cd8"
+dependencies = [
+ "autocfg",
+ "scopeguard",
+]
+
+[[package]]
 name = "paste"
 version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -68,7 +78,7 @@ name = "ptr-union"
 version = "2.0.0"
 dependencies = [
  "autocfg",
- "erasable",
+ "erasable 1.2.0",
  "paste",
 ]
 
@@ -86,14 +96,15 @@ name = "rc-borrow"
 version = "1.2.0"
 dependencies = [
  "autocfg",
- "erasable",
+ "erasable 1.2.0",
 ]
 
 [[package]]
 name = "rc-box"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
- "erasable",
+ "erasable 1.2.0",
+ "slice-dst 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -107,7 +118,17 @@ name = "slice-dst"
 version = "1.4.0"
 dependencies = [
  "autocfg",
- "erasable",
+ "erasable 1.2.0",
+]
+
+[[package]]
+name = "slice-dst"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bf8103682684791d9a6db538a391935eccd438b723d08017418ae0d07e91c1d7"
+dependencies = [
+ "autocfg",
+ "erasable 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
