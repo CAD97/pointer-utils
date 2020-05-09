@@ -75,6 +75,11 @@ in exchange for moving node payloads to the heap alongside the children array.
 
 ## Changelist
 
+### 1.4.0
+#### Additions
+
+- Added the `TryAllocSliceDst`, a fallible analogue to `AllocSliceDst`.
+
 ### 1.3.0
 #### Additions
 

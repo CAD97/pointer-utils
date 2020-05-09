@@ -181,24 +181,95 @@ where
 }
 
 /// Types that can allocate a custom slice DST within them.
+///
+/// # Implementation note
+///
+/// For most types, [`TryAllocSliceDst`] should be the implementation primitive.
+/// This trait can then be implemented in terms of `TryAllocSliceDst`:
+///
+/// ```rust
+/// # use {slice_dst::*, std::ptr};
+/// # struct Container<T: ?Sized>(Box<T>);
+/// # unsafe impl<S: ?Sized + SliceDst> TryAllocSliceDst<S> for Container<S> {
+/// #     unsafe fn try_new_slice_dst<I, E>(len: usize, init: I) -> Result<Self, E>
+/// #     where I: FnOnce(ptr::NonNull<S>) -> Result<(), E>
+/// #     { unimplemented!() }
+/// # }
+/// unsafe impl<S: ?Sized + SliceDst> AllocSliceDst<S> for Container<S> {
+///     unsafe fn new_slice_dst<I>(len: usize, init: I) -> Self
+///     where
+///         I: FnOnce(ptr::NonNull<S>),
+///     {
+///         enum Void {} // or never (!) once it is stable
+///         #[allow(clippy::unit_arg)]
+///         let init = |ptr| Ok::<(), Void>(init(ptr));
+///         match Self::try_new_slice_dst(len, init) {
+///             Ok(a) => a,
+///             Err(void) => match void {},
+///         }
+///     }
+/// }
+/// ```
+///
+/// This is not a blanket impl due to coherence rules; if the blanket impl were present,
+/// it would be impossible to implement `AllocSliceDst` instead of `TryAllocSliceDst`.
 pub unsafe trait AllocSliceDst<S: ?Sized + SliceDst> {
     /// Create a new custom slice DST.
     ///
     /// # Safety
     ///
     /// `init` must properly initialize the object behind the pointer.
-    /// The stored length of the slice DST must be the same as the length used in this call.
     /// `init` receives a fully uninitialized pointer and must not read anything before writing.
     unsafe fn new_slice_dst<I>(len: usize, init: I) -> Self
     where
         I: FnOnce(ptr::NonNull<S>);
 }
 
-// SAFETY: Box is guaranteed to be allocatable by GlobalAlloc.
-unsafe impl<S: ?Sized + SliceDst> AllocSliceDst<S> for Box<S> {
-    unsafe fn new_slice_dst<I>(len: usize, init: I) -> Self
+// FUTURE: export? Would need better generic support.
+macro_rules! impl_alloc_by_try_alloc {
+    ($T:ident) => {
+        unsafe impl<S: ?Sized + SliceDst> $crate::AllocSliceDst<S> for $T<S> {
+            unsafe fn new_slice_dst<I>(len: usize, init: I) -> Self
+            where
+                I: FnOnce(::core::ptr::NonNull<S>),
+            {
+                enum Void {}
+                #[allow(clippy::unit_arg)]
+                let init = |ptr| ::core::result::Result::<(), Void>::Ok(init(ptr));
+                match <Self as $crate::TryAllocSliceDst<S>>::try_new_slice_dst(len, init) {
+                    Ok(a) => a,
+                    Err(void) => match void {},
+                }
+            }
+        }
+    };
+}
+
+/// Types that can allocate a custom slice DST within them,
+/// given a fallible initialization function.
+pub unsafe trait TryAllocSliceDst<S: ?Sized + SliceDst>: AllocSliceDst<S> + Sized {
+    /// Create a new custom slice DST with a fallible initialization function.
+    ///
+    /// # Safety
+    ///
+    /// `init` must properly initialize the object behind the pointer.
+    /// `init` receives a fully uninitialized pointer and must not read anything before writing.
+    ///
+    /// If the initialization closure panics or returns an error,
+    /// the allocated place will be deallocated but not dropped.
+    /// To clean up the partially initialized type, we suggest
+    /// proxying creation through scope guarding types.
+    unsafe fn try_new_slice_dst<I, E>(len: usize, init: I) -> Result<Self, E>
     where
-        I: FnOnce(ptr::NonNull<S>),
+        I: FnOnce(ptr::NonNull<S>) -> Result<(), E>;
+}
+
+// SAFETY: Box is guaranteed to be allocatable by GlobalAlloc.
+impl_alloc_by_try_alloc!(Box);
+unsafe impl<S: ?Sized + SliceDst> TryAllocSliceDst<S> for Box<S> {
+    unsafe fn try_new_slice_dst<I, E>(len: usize, init: I) -> Result<Self, E>
+    where
+        I: FnOnce(ptr::NonNull<S>) -> Result<(), E>,
     {
         struct RawBox<S: ?Sized + SliceDst>(ptr::NonNull<S>, Layout);
 
@@ -223,26 +294,30 @@ unsafe impl<S: ?Sized + SliceDst> AllocSliceDst<S> for Box<S> {
         }
 
         let ptr = RawBox::new(len);
-        init(ptr.0);
-        ptr.finalize()
+        init(ptr.0)?;
+        Ok(ptr.finalize())
     }
 }
 
-unsafe impl<S: ?Sized + SliceDst> AllocSliceDst<S> for Rc<S> {
-    unsafe fn new_slice_dst<I>(len: usize, init: I) -> Self
+// SAFETY: just delegates to `Box`'s implementation (for now?)
+impl_alloc_by_try_alloc!(Rc);
+unsafe impl<S: ?Sized + SliceDst> TryAllocSliceDst<S> for Rc<S> {
+    unsafe fn try_new_slice_dst<I, E>(len: usize, init: I) -> Result<Self, E>
     where
-        I: FnOnce(ptr::NonNull<S>),
+        I: FnOnce(ptr::NonNull<S>) -> Result<(), E>,
     {
-        Box::new_slice_dst(len, init).into()
+        Box::try_new_slice_dst(len, init).map(Into::into)
     }
 }
 
-unsafe impl<S: ?Sized + SliceDst> AllocSliceDst<S> for Arc<S> {
-    unsafe fn new_slice_dst<I>(len: usize, init: I) -> Self
+// SAFETY: just delegates to `Box`'s implementation (for now?)
+impl_alloc_by_try_alloc!(Arc);
+unsafe impl<S: ?Sized + SliceDst> TryAllocSliceDst<S> for Arc<S> {
+    unsafe fn try_new_slice_dst<I, E>(len: usize, init: I) -> Result<Self, E>
     where
-        I: FnOnce(ptr::NonNull<S>),
+        I: FnOnce(ptr::NonNull<S>) -> Result<(), E>,
     {
-        Box::new_slice_dst(len, init).into()
+        Box::try_new_slice_dst(len, init).map(Into::into)
     }
 }
 
