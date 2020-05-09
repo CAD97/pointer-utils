@@ -229,7 +229,7 @@ pub unsafe trait AllocSliceDst<S: ?Sized + SliceDst> {
 macro_rules! impl_alloc_by_try_alloc {
     ($T:ident) => {
         unsafe impl<S: ?Sized + SliceDst> $crate::AllocSliceDst<S> for $T<S> {
-            unsafe fn new_slice_dst<I>(len: ::core::primitive::usize, init: I) -> Self
+            unsafe fn new_slice_dst<I>(len: usize, init: I) -> Self
             where
                 I: FnOnce(::core::ptr::NonNull<S>),
             {
