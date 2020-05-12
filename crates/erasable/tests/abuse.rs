@@ -49,10 +49,16 @@ impl DerefMut for MeanestDerefInTheWest {
 }
 
 #[test]
-fn abuse() {
+fn meanest_deref_in_the_west() {
     let mut mean = Thin::from(MeanestDerefInTheWest::new());
     for _ in 0..10 {
         mean.deref_mut();
     }
     assert_eq!(*mean, 10);
+}
+
+#[test]
+fn panic_with_mut() {
+    let mut b: Thin<Box<u8>> = Box::new(0).into();
+    std::panic::catch_unwind(move || Thin::with_mut(&mut b, |_| panic!())).unwrap_err();
 }
