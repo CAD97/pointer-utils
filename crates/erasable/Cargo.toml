@@ -1,6 +1,6 @@
 [package]
 name = "erasable"
-version = "1.2.0"
+version = "1.2.1"
 edition = "2018"
 
 authors = ["Christopher Durham (cad97) <cad97@cad97.com>"]
@@ -10,6 +10,9 @@ readme = "README.md"
 keywords = ["thin","pointer","type","erasure"]
 categories = ["data-structures","no-std","rust-patterns"]
 license = "MIT OR Apache-2.0"
+
+[package.metadata.workspaces]
+independent = true
 
 [badges]
 maintenance = { status = "passively-maintained" }
