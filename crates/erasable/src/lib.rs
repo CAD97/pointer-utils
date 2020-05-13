@@ -195,6 +195,7 @@ pub unsafe trait Erasable {
     /// Turn this erasable pointer into an erased pointer.
     ///
     /// To retrieve the original pointer, use `unerase`.
+    #[inline(always)]
     fn erase(this: ptr::NonNull<Self>) -> ErasedPtr {
         erase(this)
     }
@@ -266,6 +267,7 @@ pub unsafe trait Erasable {
 }
 
 /// Erase a pointer.
+#[inline(always)]
 pub fn erase<T: ?Sized>(ptr: ptr::NonNull<T>) -> ErasedPtr {
     unsafe { ptr::NonNull::new_unchecked(ptr.as_ptr() as *mut Erased) }
 }
@@ -298,6 +300,7 @@ unsafe impl<P: ErasablePtr> Send for Thin<P> where P: Send {}
 unsafe impl<P: ErasablePtr> Sync for Thin<P> where P: Sync {}
 
 impl<P: ErasablePtr> From<P> for Thin<P> {
+    #[inline(always)]
     fn from(this: P) -> Self {
         Thin::<P> {
             ptr: P::erase(this),
@@ -698,11 +701,13 @@ macro_rules! impl_erasable {
         where
             T: Erasable,
         {
+            #[inline]
             fn erase(this: Self) -> ErasedPtr {
                 let ptr = unsafe { ptr::NonNull::new_unchecked(<$ty>::into_raw(this) as *mut _) };
                 T::erase(ptr)
             }
 
+            #[inline]
             unsafe fn unerase(this: ErasedPtr) -> Self {
                 Self::from_raw(T::unerase(this).as_ptr())
             }
@@ -723,10 +728,12 @@ impl_erasable!(for<T>
 
 #[cfg(has_never)]
 unsafe impl ErasablePtr for ! {
+    #[inline(always)]
     fn erase(this: !) -> ErasedPtr {
         this
     }
     #[rustfmt::skip]
+    #[inline(always)]
     unsafe fn unerase(_this: ErasedPtr) -> Self {
         #[cfg(debug_assertions)] {
             panic!("attempted to unerase erased pointer to !")
@@ -737,10 +744,12 @@ unsafe impl ErasablePtr for ! {
     }
 }
 
+#[inline(always)]
 unsafe fn erase_lt<'a, 'b, T: ?Sized>(this: &'a T) -> &'b T {
     &*(this as *const T)
 }
 
+#[inline(always)]
 unsafe fn erase_lt_mut<'a, 'b, T: ?Sized>(this: &'a mut T) -> &'b mut T {
     &mut *(this as *mut T)
 }

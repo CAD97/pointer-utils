@@ -123,6 +123,7 @@ print_if_string(my_number.try_into().unwrap());
 
 The unsizing as `", stringify!($Rc), "` is required until
 [DST coercions](https://github.com/rust-lang/rust/issues/27732) are stabilized."),
+                #[inline]
                 pub fn downcast<T>(self) -> Result<$RcBox<T>, Self>
                 where T: Any,
                 {
@@ -164,6 +165,7 @@ print_if_string(my_number.try_into().unwrap());
 
 The unsizing as `", stringify!($Rc), "` is required until
 [DST coercions](https://github.com/rust-lang/rust/issues/27732) are stabilized."),
+                #[inline]
                 pub fn downcast<T>(self) -> Result<$RcBox<T>, Self>
                 where T: Any + Send
                 {
@@ -205,6 +207,7 @@ print_if_string(my_number.try_into().unwrap());
 
 The unsizing as `", stringify!($Rc), "` is required until
 [DST coercions](https://github.com/rust-lang/rust/issues/27732) are stabilized."),
+                #[inline]
                 pub fn downcast<T>(self) -> Result<$RcBox<T>, Self>
                 where T: Any + Send + Sync
                 {

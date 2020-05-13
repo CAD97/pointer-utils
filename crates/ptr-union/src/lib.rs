@@ -24,20 +24,22 @@ const TAG_B: usize = 0b01;
 const TAG_C: usize = 0b10;
 const TAG_D: usize = 0b11;
 
+#[inline(always)]
 fn check_tag(ptr: ErasedPtr, mask: usize, tag: usize) -> bool {
     debug_assert_eq!(tag & mask, tag);
     (ptr.as_ptr() as usize & mask) == tag
 }
 
+#[inline(always)]
 fn set_tag(ptr: ErasedPtr, mask: usize, tag: usize) -> ErasedPtr {
     debug_assert_eq!(tag & mask, tag);
     debug_assert!(check_tag(ptr, mask, 0));
-    let high = ptr.as_ptr() as usize & !mask;
-    let low = tag & mask;
-    unsafe { ErasedPtr::new_unchecked((high | low) as *mut _) }
+    unsafe { ErasedPtr::new_unchecked((ptr.as_ptr() as usize | tag) as *mut _) }
 }
 
+#[inline(always)]
 fn unset_tag(ptr: ErasedPtr, mask: usize, tag: usize) -> ErasedPtr {
+    debug_assert_eq!(tag & mask, tag);
     debug_assert!(check_tag(ptr, mask, tag));
     unsafe { ErasedPtr::new_unchecked((ptr.as_ptr() as usize & !mask) as *mut _) }
 }
@@ -52,9 +54,11 @@ mod never_ptr {
     #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
     pub enum NeverPtr {}
     unsafe impl ErasablePtr for NeverPtr {
+        #[inline]
         fn erase(this: Self) -> ErasedPtr {
             match this {}
         }
+        #[inline]
         unsafe fn unerase(_this: ErasedPtr) -> Self {
             unreachable!()
         }
