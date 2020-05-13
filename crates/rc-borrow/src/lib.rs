@@ -65,6 +65,7 @@ trait RawRc<T: ?Sized> {
 
 impl<T: ?Sized> RawRc<T> for Arc<T> {
     #[rustfmt::skip]
+    #[inline(always)]
     fn as_raw(this: &Self) -> *const T {
         #[cfg(not(has_Arc__as_raw))] {
             Arc::into_raw(unsafe { ptr::read(this) })
@@ -75,6 +76,7 @@ impl<T: ?Sized> RawRc<T> for Arc<T> {
     }
 
     #[rustfmt::skip]
+    #[inline(always)]
     unsafe fn clone_raw(this: *const T) -> Self {
         #[cfg(not(has_Arc__clone_raw))] {
             Arc::clone(&ManuallyDrop::new(Arc::from_raw(this)))
@@ -87,6 +89,7 @@ impl<T: ?Sized> RawRc<T> for Arc<T> {
 
 impl<T: ?Sized> RawRc<T> for Rc<T> {
     #[rustfmt::skip]
+    #[inline(always)]
     fn as_raw(this: &Self) -> *const T {
         #[cfg(not(has_Rc__as_raw))] {
             Rc::into_raw(unsafe { ptr::read(this) })
@@ -97,6 +100,7 @@ impl<T: ?Sized> RawRc<T> for Rc<T> {
     }
 
     #[rustfmt::skip]
+    #[inline(always)]
     unsafe fn clone_raw(this: *const T) -> Self {
         #[cfg(not(has_Rc__clone_raw))] {
             Rc::clone(&ManuallyDrop::new(Rc::from_raw(this)))
@@ -181,10 +185,12 @@ between the two types, and the types must be transmute-compatible."),
         where
             T: Erasable
         {
+            #[inline(always)]
             fn erase(this: Self) -> ErasedPtr {
                 T::erase(this.raw)
             }
 
+            #[inline(always)]
             unsafe fn unerase(this: ErasedPtr) -> Self {
                 $RcBorrow {
                     raw: T::unerase(this),
