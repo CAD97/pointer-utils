@@ -35,7 +35,10 @@ use std::{
     panic::{RefUnwindSafe, UnwindSafe},
 };
 use {
-    alloc::{rc::Rc, sync::Arc},
+    alloc::{
+        rc::{self, Rc},
+        sync::{self, Arc},
+    },
     core::{
         borrow::Borrow,
         cmp::Ordering,
@@ -55,59 +58,58 @@ use {
 /// See https://internals.rust-lang.org/t/_/11463/11 for why these are important.
 /// By using a trait here, we can more easily switch when these functions are available.
 trait RawRc<T: ?Sized> {
+    type Weak;
+
     //noinspection RsSelfConvention
     fn as_raw(this: &Self) -> *const T;
+
     /// # Safety
     ///
     /// This pointer must have come from [`RawRc::as_raw`] or `into_raw`.
     unsafe fn clone_raw(this: *const T) -> Self;
+
+    unsafe fn downgrade_raw(this: *const T) -> Self::Weak;
 }
 
 impl<T: ?Sized> RawRc<T> for Arc<T> {
-    #[rustfmt::skip]
+    type Weak = sync::Weak<T>;
+
     #[inline(always)]
     fn as_raw(this: &Self) -> *const T {
-        #[cfg(not(has_Arc__as_raw))] {
-            Arc::into_raw(unsafe { ptr::read(this) })
-        }
-        #[cfg(has_Arc__as_raw)] {
-            Arc::as_raw(this)
-        }
+        // Arc::as_ptr(this)
+        Arc::into_raw(unsafe { ptr::read(this) })
     }
 
-    #[rustfmt::skip]
     #[inline(always)]
     unsafe fn clone_raw(this: *const T) -> Self {
-        #[cfg(not(has_Arc__clone_raw))] {
-            Arc::clone(&ManuallyDrop::new(Arc::from_raw(this)))
-        }
-        #[cfg(has_Arc__clone_raw)] {
-            Arc::clone_raw(this)
-        }
+        Arc::clone(&ManuallyDrop::new(Arc::from_raw(this)))
+    }
+
+    #[inline(always)]
+    unsafe fn downgrade_raw(this: *const T) -> sync::Weak<T> {
+        let this = ManuallyDrop::new(Arc::from_raw(this));
+        Arc::downgrade(&this)
     }
 }
 
 impl<T: ?Sized> RawRc<T> for Rc<T> {
-    #[rustfmt::skip]
+    type Weak = rc::Weak<T>;
+
     #[inline(always)]
     fn as_raw(this: &Self) -> *const T {
-        #[cfg(not(has_Rc__as_raw))] {
-            Rc::into_raw(unsafe { ptr::read(this) })
-        }
-        #[cfg(has_Rc__as_raw)] {
-            Rc::as_raw(this)
-        }
+        // Rc::as_ptr(this)
+        Rc::into_raw(unsafe { ptr::read(this) })
     }
 
-    #[rustfmt::skip]
     #[inline(always)]
     unsafe fn clone_raw(this: *const T) -> Self {
-        #[cfg(not(has_Rc__clone_raw))] {
-            Rc::clone(&ManuallyDrop::new(Rc::from_raw(this)))
-        }
-        #[cfg(has_Rc__clone_raw)] {
-            Rc::clone_raw(this)
-        }
+        Rc::clone(&ManuallyDrop::new(Rc::from_raw(this)))
+    }
+
+    #[inline(always)]
+    unsafe fn downgrade_raw(this: *const T) -> rc::Weak<T> {
+        let this = ManuallyDrop::new(Rc::from_raw(this));
+        Rc::downgrade(&this)
     }
 }
 
@@ -120,7 +122,7 @@ macro_rules! doc_comment {
 }
 
 macro_rules! rc_borrow {
-    ($($(#[$m:meta])* $vis:vis struct $RcBorrow:ident = &$Rc:ident;)*) => {$(
+    ($($(#[$m:meta])* $vis:vis struct $RcBorrow:ident = &$rc:ident::$Rc:ident;)*) => {$(
         $(#[$m])*
         $vis struct $RcBorrow<'a, T: ?Sized> {
             raw: ptr::NonNull<T>,
@@ -145,6 +147,11 @@ macro_rules! rc_borrow {
             /// Convert this borrowed pointer into an owned pointer.
             $vis fn upgrade(this: Self) -> $Rc<T> {
                 unsafe { <$Rc<T> as RawRc<T>>::clone_raw(this.raw.as_ptr()) }
+            }
+
+            /// Convert this borrowed pointer into a weak pointer.
+            $vis fn to_weak(this: Self) -> $rc::Weak<T> {
+                unsafe { <$Rc<T> as RawRc<T>>::downgrade_raw(this.raw.as_ptr()) }
             }
 
             /// Convert this borrowed pointer into a standard reference.
@@ -377,10 +384,10 @@ rc_borrow! {
     ///
     /// This type is guaranteed to have the same repr as `&T`.
     #[repr(transparent)]
-    pub struct ArcBorrow = &Arc;
+    pub struct ArcBorrow = &sync::Arc;
     /// Borrowed version of [`Rc`].
     ///
     /// This type is guaranteed to have the same repr as `&T`.
     #[repr(transparent)]
-    pub struct RcBorrow = &Rc;
+    pub struct RcBorrow = &rc::Rc;
 }
