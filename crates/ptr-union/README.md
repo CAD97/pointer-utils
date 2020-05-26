@@ -3,6 +3,11 @@ by storing the tag in the alignment bits.
 
 ## Changelist
 
+### 2.1.0
+#### Added
+
+- `fn Union*::as_untagged_ptr(&self) -> ErasedPtr`
+
 ### 2.0.0
 #### Fixes
 
