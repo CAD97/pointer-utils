@@ -44,6 +44,11 @@ fn unset_tag(ptr: ErasedPtr, mask: usize, tag: usize) -> ErasedPtr {
     unsafe { ErasedPtr::new_unchecked((ptr.as_ptr() as usize & !mask) as *mut _) }
 }
 
+#[inline(always)]
+fn unset_any_tag(ptr: ErasedPtr, mask: usize) -> ErasedPtr {
+    unsafe { ErasedPtr::new_unchecked((ptr.as_ptr() as usize & !mask) as *mut _) }
+}
+
 #[cfg(has_never)]
 pub type NeverPtr = !;
 #[cfg(not(has_never))]
@@ -247,6 +252,11 @@ macro_rules! impl_union {
                         $(.or_else(|this| this.[<into_ $a>]().map($Enum::$A)))*
                         .unwrap_or_else(|_| unsafe { unreachable_unchecked() })
                 }
+            }
+
+            /// Get the raw type-erased untagged pointer to the payload.
+            pub fn as_untagged_ptr(&self) -> ErasedPtr {
+                unset_any_tag(self.raw, $mask)
             }
         }
 
