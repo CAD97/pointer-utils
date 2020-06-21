@@ -131,6 +131,26 @@ impl<Header, Item> SliceWithHeader<Header, Item> {
 
         unsafe { A::new_slice_dst(len, InProgress::init(len, header, items)) }
     }
+
+    #[allow(clippy::new_ret_no_self)]
+    /// Create a new slice/header DST from a slice, in a [`AllocSliceDst`] container.
+    pub fn from_slice<A>(header: Header, s: &[Item]) -> A
+    where
+        A: AllocSliceDst<Self>,
+        Item: Copy,
+    {
+        let len = s.len();
+        let (layout, [length_offset, header_offset, slice_offset]) = Self::layout(len);
+        unsafe {
+            A::new_slice_dst(len, |ptr| {
+                let raw = ptr.as_ptr().cast::<u8>();
+                ptr::write(raw.add(length_offset).cast(), len);
+                ptr::write(raw.add(header_offset).cast(), header);
+                ptr::copy_nonoverlapping(s.as_ptr(), raw.add(slice_offset).cast(), len);
+                debug_assert_eq!(Layout::for_value(ptr.as_ref()), layout);
+            })
+        }
+    }
 }
 
 impl<Header, Item> Clone for Box<SliceWithHeader<Header, Item>>
