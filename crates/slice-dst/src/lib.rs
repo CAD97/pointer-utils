@@ -77,6 +77,56 @@
 //! This is mostly useful when space optimization is very important.
 //! This is still useful when using an arena: it reduces the allocations in the arena
 //! in exchange for moving node payloads to the heap alongside the children array.
+//!
+//! # But how?
+//!
+//! This is possible because of the following key building blocks:
+//!
+//! - `Box`'s [memory layout][boxed-memory-layout] is defined and uses the
+//!   [global allocator][std::alloc::Global], and is allowed to be manually allocated.
+//! - [Array layout][array-layout] and [slice layout][slice-layout] are defined.
+//! - [`#[repr(C)]`][repr-c-layout] allows us to make compound types with defined layout.
+//! - We can turn an opaque pointer into a slice fat pointer with
+//!   [`ptr::slice_from_raw_parts`][slice_from_raw_parts].
+//! - We can cast a slice pointer to a pointer to our compound type
+//!   in order to keep the correct fat pointer metadata.
+//!
+//! So with these guarantees, we can "just" manually allocate some space, initialize it
+//! for some custom `repr(C)` structure, and convert it into a `Box`. From that point,
+//! `Box` handles managing the memory, including deallocation or moving it into another
+//! smart pointer, such as `Arc`.
+//!
+//!   [boxed-memory-layout]: <https://doc.rust-lang.org/stable/std/boxed/index.html#memory-layout>
+//!   [array-layout]: <https://doc.rust-lang.org/stable/reference/type-layout.html#array-layout>
+//!   [slice-layout]: <https://doc.rust-lang.org/stable/reference/type-layout.html#slice-layout>
+//!   [repr-c-layout]: <https://doc.rust-lang.org/stable/reference/type-layout.html#reprc-structs>
+//!   [std::alloc::Global]: <https://doc.rust-lang.org/stable/std/alloc/index.html#the-global_allocator-attribute>
+//!
+//! [`SliceDst`] defines the capabilities required of the pointee type. It must be able to
+//! turn a trailing slice length into a [`Layout`] for the whole pointee, and it must provide
+//! a way to turn a untyped slice pointer `*mut [()]` into a correctly typed pointer.
+//!
+//! The functions [`alloc_slice_dst`] and [`alloc_slice_dst_in`] provide a way
+//! to allocate space for a `SliceDst` type via the global allocator.
+//!
+//! [`AllocSliceDst`] types are owning heap pointers that can create a new slice DST.
+//! They take an initialization routine that is responsible for initializing the
+//! uninitialized allocated place, and do the ceremony required to allocate the place
+//! and turn it into the proper type by delgating to `SliceDst` and `alloc_slice_dst`.
+//! They also handle panic/unwind safety of the initialization routine and prevent
+//! leaking of the allocated place due to an initialization panic.
+//!
+//! [`TryAllocSliceDst`] is the potentially fallible initialization version.
+//!
+//! All of these pieces are the glue, but [`SliceWithHeader`] and [`StrWithHeader`]
+//! put the pieces together into a safe package. They take a header and an iterator
+//! (or copyable slice) and put together all of the pieces to allocate a dynamically
+//! sized custom type.
+//!
+//! Additionaly, though not strictly required, these types store the slice length inline.
+//! This gives them the ability to reconstruct pointers from fully type erased pointers
+#![cfg_attr(feature = "erasable", doc = "via the [`Erasable`] trait")]
+//! .
 
 // All hail Chairity!
 // The one who saves our sanity -
