@@ -162,6 +162,18 @@ macro_rules! rc_borrow {
                 unsafe { &*this.raw.as_ptr() }
             }
 
+            /// Get the number of strong owning pointers to this allocation.
+            $vis fn strong_count(this: Self) -> usize {
+                let rc = unsafe { ManuallyDrop::new($Rc::from_raw(Self::into_raw(this))) };
+                $Rc::strong_count(&rc)
+            }
+
+            /// Get the number of weak owning pointers to this allocation.
+            $vis fn weak_count(this: Self) -> usize {
+                let rc = unsafe { ManuallyDrop::new($Rc::from_raw(Self::into_raw(this))) };
+                $Rc::weak_count(&rc)
+            }
+
             /// Get a raw pointer that can be used with `from_raw`.
             $vis fn into_raw(this: Self) -> *const T {
                 ManuallyDrop::new(this).raw.as_ptr()
