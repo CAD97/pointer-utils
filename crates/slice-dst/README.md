@@ -75,7 +75,7 @@ in exchange for moving node payloads to the heap alongside the children array.
 
 ## Changelist
 
-### 1.4.0
+### 1.5.0
 #### Additions
 
 - Added `SliceWithHeader::from_slice`, which is a specialization of `_::new`

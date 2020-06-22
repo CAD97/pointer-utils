@@ -99,7 +99,7 @@ name = "rc-box"
 version = "1.1.1"
 dependencies = [
  "erasable 1.2.1",
- "slice-dst 1.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "slice-dst 1.4.1",
 ]
 
 [[package]]
@@ -111,19 +111,19 @@ checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
 [[package]]
 name = "slice-dst"
 version = "1.4.1"
-dependencies = [
- "autocfg",
- "erasable 1.2.1",
-]
-
-[[package]]
-name = "slice-dst"
-version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9fad5402bd04a3a3209ee22a021be871f54519bf427f50d4d2c9e19ab11f7d36"
 dependencies = [
  "autocfg",
  "erasable 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "slice-dst"
+version = "1.5.0"
+dependencies = [
+ "autocfg",
+ "erasable 1.2.1",
 ]
 
 [[package]]
