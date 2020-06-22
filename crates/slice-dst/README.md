@@ -78,6 +78,12 @@ in exchange for moving node payloads to the heap alongside the children array.
 ### 1.4.0
 #### Additions
 
+- Added `SliceWithHeader::from_slice`, which is a specialization of `_::new`
+  for slices of `Copy` types that can avoid some bookkeeping overhead.
+
+### 1.4.0
+#### Additions
+
 - Added the `TryAllocSliceDst`, a fallible analogue to `AllocSliceDst`.
 
 ### 1.3.0
