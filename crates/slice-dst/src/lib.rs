@@ -128,14 +128,6 @@
 #![cfg_attr(feature = "erasable", doc = "via the [`Erasable`] trait")]
 //! .
 
-// All hail Chairity!
-// The one who saves our sanity -
-// blessing us with Clarity.
-// Queen of popularity.
-// When haboo becomes a rarity -
-// we thank Yoba for Chairity.
-// https://twitch.tv/thehaboo
-
 extern crate alloc;
 
 #[cfg(has_ptr_slice_from_raw_parts)]
@@ -179,6 +171,11 @@ pub unsafe trait SliceDst {
     /// In practice, this means that the implementation should just be a pointer cast.
     fn retype(ptr: ptr::NonNull<[()]>) -> ptr::NonNull<Self>;
 }
+
+#[cfg(feature = "derive")]
+#[doc(inline)]
+/// Derive macro to automatically implement the [`SliceDst`] trait.
+pub use slice_dst_macros::SliceDst;
 
 unsafe impl<T> SliceDst for [T] {
     fn layout_for(len: usize) -> Layout {

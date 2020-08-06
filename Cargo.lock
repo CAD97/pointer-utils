@@ -93,6 +93,7 @@ version = "1.5.1"
 dependencies = [
  "autocfg",
  "erasable 1.2.1",
+ "slice-dst-macros",
 ]
 
 [[package]]
@@ -104,3 +105,16 @@ dependencies = [
  "autocfg",
  "erasable 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
+
+[[package]]
+name = "slice-dst-macros"
+version = "0.0.0"
+dependencies = [
+ "watt",
+]
+
+[[package]]
+name = "watt"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d626c754be194d806f2f496d3ac92470a12ec89df451b3b3f358194803e8f748"

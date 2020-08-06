@@ -19,6 +19,7 @@ jobs:
           toolchain: beta
           profile: minimal
           override: true
+          target: wasm32-unknown-unknown
 
       - name: Cargo target cache
         uses: actions/cache@v1
@@ -86,6 +87,7 @@ jobs:
           toolchain: beta
           override: true
           components: clippy
+          target: wasm32-unknown-unknown
 
       - name: Check style
         uses: actions-rs/clippy-check@v1

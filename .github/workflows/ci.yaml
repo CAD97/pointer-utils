@@ -23,6 +23,7 @@ jobs:
           toolchain: beta
           profile: minimal
           override: true
+          target: wasm32-unknown-unknown
 
       - name: Cargo target cache
         uses: actions/cache@v1
@@ -71,6 +72,7 @@ jobs:
           toolchain: 1.41.0
           profile: minimal
           override: true
+          target: wasm32-unknown-unknown
 
       - name: Generate lockfile
         uses: actions-rs/cargo@v1
@@ -145,6 +147,7 @@ jobs:
           toolchain: beta
           override: true
           components: clippy
+          target: wasm32-unknown-unknown
 
       - name: Check style
         uses: actions-rs/clippy-check@v1
@@ -170,6 +173,7 @@ jobs:
           toolchain: nightly
           override: true
           components: miri
+          target: wasm32-unknown-unknown
 
       - name: Cargo target cache
         uses: actions/cache@v1
@@ -185,7 +189,7 @@ jobs:
 
       # cargo-miri does not support workspaces yet [rust-lang/miri#1001]
       # so run `cargo miri test` in each crate directory manually.
-      # We don't seem to be able to change the working directory of actions-rc/cargo.
+      # We don't seem to be able to change the working directory of actions-rs/cargo.
       - name: Miri test erasable
         working-directory: ./crates/erasable
         run: cargo miri test --all-features

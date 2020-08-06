@@ -1,0 +1,24 @@
+[workspace] # not a member of root workspace
+
+[package]
+name = "slice-dst-macros-impl"
+version = "0.0.0"
+edition = "2018"
+publish = false
+
+authors = ["Christopher Durham (cad97) <cad97@cad97.com>"]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+proc-macro2 = "1.0.19"
+syn = { version = "1.0.38", features = ["extra-traits", "clone-impls"] }
+quote = "1.0.7"
+
+[patch.crates-io]
+proc-macro2 = { git = "https://github.com/dtolnay/watt" }
+
+[profile.release]
+lto = true
+panic = "abort"

@@ -1,0 +1,25 @@
+[package]
+name = "slice-dst-macros"
+version = "0.0.0"
+edition = "2018"
+
+authors = ["Christopher Durham (cad97) <cad97@cad97.com>"]
+description = "Slice-based custom DSTs"
+repository = "https://github.com/CAD97/pointer-utils/tree/master/crates/slice-dst-macros"
+readme = "README.md"
+keywords = ["thin","slice","type","erasure","dst"]
+categories = ["data-structures","no-std","rust-patterns"]
+license = "MIT OR Apache-2.0"
+
+include = [
+    "Cargo.toml",
+    "README.md",
+    "src/lib.rs",
+    "src/slice_dst_macros_impl.wasm",
+]
+
+[lib]
+proc-macro = true
+
+[dependencies]
+watt = "0.4.0"

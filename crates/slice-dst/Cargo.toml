@@ -18,7 +18,13 @@ independent = true
 maintenance = { status = "passively-maintained" }
 
 [features]
-default = ["erasable"]
+default = ["erasable", "derive"]
+derive = ["slice-dst-macros"]
+
+[dependencies.slice-dst-macros]
+path = "../slice-dst-macros"
+version = "=0.0.0"
+optional = true
 
 [dependencies.erasable]
 version = "1.1.0"
@@ -32,3 +38,8 @@ autocfg = "1.0.0"
 name = "smoke"
 path = "tests/smoke.rs"
 required-features = ["erasable"]
+
+[[test]]
+name = "derive"
+path = "tests/derive.rs"
+required-features = ["derive"]
