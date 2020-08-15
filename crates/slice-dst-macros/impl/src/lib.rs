@@ -11,6 +11,57 @@ pub extern "C" fn derive_slice_dst(input: TokenStream) -> TokenStream {
         .unwrap_or_else(|err| err.to_compile_error())
 }
 
+#[derive(Default)]
+struct SliceDstMeta {
+    new_from_iter: Option<syn::Ident>,
+    new_from_slice: Option<syn::Ident>,
+}
+
+mod kw {
+    syn::custom_keyword!(new_from_iter);
+    syn::custom_keyword!(new_from_slice);
+}
+
+impl syn::parse::Parse for SliceDstMeta {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let content;
+        let _ = syn::parenthesized!(content in input);
+        let mut this = SliceDstMeta::default();
+        while !content.is_empty() {
+            let la = content.lookahead1();
+
+            if la.peek(kw::new_from_iter) {
+                if this.new_from_iter.is_some() {
+                    return Err(content.error("duplicate `new_from_iter`"));
+                }
+                let ident = content.parse()?;
+                if content.peek(syn::Token![=]) {
+                    let _: syn::Token![=] = content.parse()?;
+                    let ident = content.parse()?;
+                    this.new_from_iter = Some(ident);
+                } else {
+                    this.new_from_iter = Some(ident);
+                }
+            } else if la.peek(kw::new_from_slice) {
+                if this.new_from_slice.is_some() {
+                    return Err(content.error("duplicate `new_from_slice`"));
+                }
+                let ident = content.parse()?;
+                if content.peek(syn::Token![=]) {
+                    let _: syn::Token![=] = content.parse()?;
+                    let ident = content.parse()?;
+                    this.new_from_slice = Some(ident);
+                } else {
+                    this.new_from_slice = Some(ident);
+                }
+            } else {
+                return Err(la.error());
+            }
+        }
+        Ok(this)
+    }
+}
+
 fn actually_derive_slice_dst(
     syn::DeriveInput {
         attrs,
@@ -38,18 +89,46 @@ fn actually_derive_slice_dst(
 
     #[allow(non_snake_case)]
     let reprC = syn::parse_quote!(repr(C));
-    if !attrs
-        .iter()
-        .flat_map(syn::Attribute::parse_meta)
-        .any(|meta| meta == reprC)
-    {
+
+    let mut saw_repr_c = false;
+    let mut new_from_iter = None;
+    let mut new_from_slice = None;
+
+    for attr in attrs.into_iter() {
+        if attr.path.is_ident("repr") {
+            if let Ok(meta) = attr.parse_meta() {
+                saw_repr_c = saw_repr_c || meta == reprC;
+            }
+        } else if attr.path.is_ident("slice_dst") {
+            let meta: SliceDstMeta = syn::parse2(attr.tokens)?;
+
+            if new_from_iter.is_some() && meta.new_from_iter.is_some() {
+                return Err(syn::Error::new(
+                    meta.new_from_iter.unwrap().span(),
+                    "duplicate `new_from_iter`",
+                ));
+            } else {
+                new_from_iter = meta.new_from_iter;
+            }
+            if new_from_slice.is_some() && meta.new_from_slice.is_some() {
+                return Err(syn::Error::new(
+                    meta.new_from_slice.unwrap().span(),
+                    "duplicate `new_from_iter`",
+                ));
+            } else {
+                new_from_slice = meta.new_from_slice;
+            }
+        }
+    }
+
+    if !saw_repr_c {
         return Err(syn::Error::new(
             Span::call_site(),
             "cannot derive `SliceDst` for non-`#[repr(C)]` struct",
         ));
     }
 
-    let (head_field_ty, tail_field_ty) = {
+    let (head_field_tys, tail_field_ty) = {
         let mut fields: Vec<_> = data.fields.iter().map(|field| &field.ty).collect();
         match fields.pop() {
             Some(tail) => (fields, tail),
@@ -61,20 +140,21 @@ fn actually_derive_slice_dst(
             }
         }
     };
+    let head_field_tys = &*head_field_tys;
 
     let tail_layout = quote_spanned! {tail_field_ty.span()=>
         <#tail_field_ty as SliceDst>::layout_for(len)
     };
 
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
-    Ok(quote! {
+    let mut output_stream = quote! {
         #[allow(unsafe_code)]
         unsafe impl #impl_generics SliceDst for #ident #ty_generics #where_clause {
             fn layout_for(len: usize) -> ::core::alloc::Layout {
                 let mut layout = ::core::alloc::Layout::new::<()>();
                 const err_msg: &'static str = concat!("too big `", stringify!(#ident), "` requested from `SliceDst::layout_for`");
                 #(
-                    layout = layout.extend(::core::alloc::Layout::new::<#head_field_ty>()).expect(err_msg).0;
+                    layout = layout.extend(::core::alloc::Layout::new::<#head_field_tys>()).expect(err_msg).0;
                 )*
                 layout = layout.extend(#tail_layout).expect(err_msg).0;
                 layout.pad_to_align()
@@ -84,5 +164,67 @@ fn actually_derive_slice_dst(
                 unsafe { ::core::ptr::NonNull::new_unchecked(ptr.as_ptr() as *mut _) }
             }
         }
-    })
+    };
+
+    if new_from_iter.is_some() || new_from_slice.is_some() {
+        let tail_field_item_ty = match tail_field_ty {
+            syn::Type::Slice(ty) => &*ty.elem,
+            ty => {
+                return Err(syn::Error::new(
+                    ty.span(),
+                    "tail type must be a slice to derive a slice_dst constructor",
+                ))
+            }
+        };
+
+        let sized_type_count = head_field_tys.len();
+        let sized_type_index: Vec<syn::Index> = (0..sized_type_count).map(Into::into).collect();
+
+        if let Some(new_from_slice) = new_from_slice {
+            output_stream.extend(quote! {
+                impl #impl_generics #ident #ty_generics #where_clause {
+                    #[allow(clippy::new_ret_no_self)]
+                    fn #new_from_slice<A>(sized: (#(#head_field_tys,)*), slice: &[#tail_field_item_ty]) -> A
+                    where
+                        A: ::slice_dst::AllocSliceDst<Self>,
+                        #tail_field_item_ty: ::core::marker::Copy,
+                    {
+                        let len = slice.len();
+                        let mut layout = ::core::alloc::Layout::new::<()>();
+                        const err_msg: &'static str = concat!("too big `", stringify!(#ident), "` requested from `", stringify!(#ident), "::", stringify!(#new_from_slice), "`");
+                        #[allow(clippy::eval_order_dependence)]
+                        let offsets: [usize; #sized_type_count + 1] = [
+                            #({
+                                let (extended, offset) = layout.extend(::core::alloc::Layout::new::<#head_field_tys>()).expect(err_msg);
+                                layout = extended;
+                                offset
+                            },)*
+                            {
+                                let (extended, offset) = layout.extend(#tail_layout).expect(err_msg);
+                                layout = extended.pad_to_align();
+                                offset
+                            },
+                        ];
+
+                        unsafe {
+                            A::new_slice_dst(len, |ptr| {
+                                let raw = ptr.as_ptr().cast::<u8>();
+                                #(
+                                    ::core::ptr::write(raw.add(offsets[#sized_type_index]).cast(), sized.#sized_type_index);
+                                )*
+                                ::core::ptr::copy_nonoverlapping(slice.as_ptr(), raw.add(offsets[#sized_type_count]).cast(), len);
+                                debug_assert_eq!(::core::alloc::Layout::for_value(ptr.as_ref()), layout);
+                            })
+                        }
+                    }
+                }
+            });
+        }
+
+        if let Some(new_from_iter) = new_from_iter {
+            todo!("generate new_from_iter = {}", new_from_iter);
+        }
+    }
+
+    Ok(output_stream)
 }

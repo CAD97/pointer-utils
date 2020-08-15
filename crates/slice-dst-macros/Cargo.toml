@@ -4,7 +4,7 @@ version = "0.0.0"
 edition = "2018"
 
 authors = ["Christopher Durham (cad97) <cad97@cad97.com>"]
-description = "Slice-based custom DSTs"
+description = "proc-macros for slice-dst"
 repository = "https://github.com/CAD97/pointer-utils/tree/master/crates/slice-dst-macros"
 readme = "README.md"
 keywords = ["thin","slice","type","erasure","dst"]
