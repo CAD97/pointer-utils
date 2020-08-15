@@ -57,6 +57,12 @@ impl syn::parse::Parse for SliceDstMeta {
             } else {
                 return Err(la.error());
             }
+
+            if content.peek(syn::Token![,]) {
+                let _: syn::Token![,] = content.parse()?;
+            } else {
+                break;
+            }
         }
         Ok(this)
     }
@@ -140,7 +146,6 @@ fn actually_derive_slice_dst(
             }
         }
     };
-    let head_field_tys = &*head_field_tys;
 
     let tail_layout = quote_spanned! {tail_field_ty.span()=>
         <#tail_field_ty as SliceDst>::layout_for(len)
@@ -184,6 +189,7 @@ fn actually_derive_slice_dst(
             output_stream.extend(quote! {
                 impl #impl_generics #ident #ty_generics #where_clause {
                     #[allow(clippy::new_ret_no_self)]
+                    /// Create a new instance of this slice dst by copying a tail slice.
                     fn #new_from_slice<A>(sized: (#(#head_field_tys,)*), slice: &[#tail_field_item_ty]) -> A
                     where
                         A: ::slice_dst::AllocSliceDst<Self>,
@@ -222,7 +228,82 @@ fn actually_derive_slice_dst(
         }
 
         if let Some(new_from_iter) = new_from_iter {
-            todo!("generate new_from_iter = {}", new_from_iter);
+            output_stream.extend(quote! {
+                impl #impl_generics #ident #ty_generics #where_clause {
+                    #[allow(clippy::new_ret_no_self)]
+                    /// Create a new instance of this slice dst by collecting from a tail iterator.
+                    pub fn #new_from_iter<A, I>(sized: (#(#head_field_tys,)*), iter: I) -> A
+                    where
+                        A: ::slice_dst::AllocSliceDst<Self>,
+                        I: ::core::iter::IntoIterator<Item = #tail_field_item_ty>,
+                        I::IntoIter: ::core::iter::ExactSizeIterator,
+                    {
+                        let mut iter = iter.into_iter();
+                        let len = iter.len();
+                        let mut layout = ::core::alloc::Layout::new::<()>();
+                        const err_msg: &'static str = concat!("too big `", stringify!(#ident), "` requested from `", stringify!(#ident), "::", stringify!(#new_from_iter), "`");
+                        #[allow(clippy::eval_order_dependence)]
+                        let offsets: [usize; #sized_type_count + 1] = [
+                            #({
+                                let (extended, offset) = layout.extend(::core::alloc::Layout::new::<#head_field_tys>()).expect(err_msg);
+                                layout = extended;
+                                offset
+                            },)*
+                            {
+                                let (extended, offset) = layout.extend(#tail_layout).expect(err_msg);
+                                layout = extended.pad_to_align();
+                                offset
+                            },
+                        ];
+
+                        struct SliceWriter<Item> {
+                            ptr: ::core::ptr::NonNull<Item>,
+                            len: usize,
+                        }
+
+                        impl<Item> ::core::ops::Drop for SliceWriter<Item> {
+                            fn drop(&mut self) {
+                                unsafe {
+                                    ::core::ptr::drop_in_place(::core::ptr::slice_from_raw_parts_mut(
+                                        self.ptr.as_ptr(),
+                                        self.len,
+                                    ))
+                                }
+                            }
+                        }
+
+                        impl<Item> SliceWriter<Item> {
+                            unsafe fn new(ptr: *mut Item) -> Self {
+                                SliceWriter {
+                                    ptr: ::core::ptr::NonNull::new_unchecked(ptr),
+                                    len: 0,
+                                }
+                            }
+
+                            unsafe fn push(&mut self, item: Item) {
+                                self.ptr.as_ptr().add(self.len).write(item);
+                                self.len += 1;
+                            }
+                        }
+
+                        unsafe {
+                            A::new_slice_dst(len, move |ptr| {
+                                let raw = ptr.as_ptr().cast::<u8>();
+                                let mut slice_writer = SliceWriter::new(raw.add(offsets[#sized_type_count]).cast());
+                                for _ in 0..len {
+                                    slice_writer.push(iter.next().expect("`ExactSizeIterator` over-reported length"));
+                                }
+                                assert!(iter.next().is_none(), "`ExactSizeIterator` under-reported length");
+                                ::core::mem::forget(slice_writer);
+                                #(
+                                    ::core::ptr::write(raw.add(offsets[#sized_type_index]).cast(), sized.#sized_type_index);
+                                )*
+                                debug_assert_eq!(::core::alloc::Layout::for_value(ptr.as_ref()), layout);
+                            })
+                        }
+                    }
+                }
+            });
         }
     }
 
