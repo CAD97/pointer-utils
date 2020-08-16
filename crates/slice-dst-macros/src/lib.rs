@@ -1,3 +1,4 @@
+extern crate proc_macro;
 use {proc_macro::TokenStream, watt::WasmMacro};
 
 static MACRO: WasmMacro = WasmMacro::new(WASM);
