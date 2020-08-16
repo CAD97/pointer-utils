@@ -1,7 +1,9 @@
+#![allow(deprecated)]
 use super::*;
 
 #[repr(C)]
 #[derive(Debug, Eq, PartialEq, Hash)]
+#[deprecated = "use `#[derive(SliceDst)]` instead"]
 /// A custom slice-based DST.
 ///
 /// The length is stored as a `usize` at offset 0.
@@ -176,6 +178,7 @@ unsafe impl<Header, Item> Erasable for SliceWithHeader<Header, Item> {
 
 #[repr(C)]
 #[derive(Debug, Eq, PartialEq, Hash)]
+#[deprecated = "use `#[derive(SliceDst)]` instead"]
 /// A custom str-based DST.
 ///
 /// The length is stored as a `usize` at offset 0.

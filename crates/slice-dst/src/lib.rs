@@ -47,30 +47,36 @@
 //! With this crate, however, the children array can be stored inline with the node's data:
 //!
 //! ```rust
-//! # use std::{iter, sync::Arc}; use slice_dst::*;
-//! struct Node(Arc<SliceWithHeader<&'static str, Node>>);
+//! # use std::sync::Arc; use slice_dst::*;
+//! #[derive(SliceDst)]
+//! #[repr(C)]
+//! #[slice_dst(new_from_iter)]
+//! struct Node {
+//!     data: &'static str,
+//!     slice: [Arc<Node>],
+//! }
 //!
-//! let a = Node(SliceWithHeader::new("a", None));
-//! let b = Node(SliceWithHeader::new("b", None));
-//! let c = Node(SliceWithHeader::new("c", None));
-//! // this vec is just an easy way to get an ExactSizeIterator
-//! let abc = Node(SliceWithHeader::new("abc", vec![a, b, c]));
+//! // the generated constructor is deliberately awkward; create a wrapper to expose
+//! let a = Node::new_from_iter(("a",), vec![]);
+//! let b = Node::new_from_iter(("b",), vec![]);
+//! let c = Node::new_from_iter(("c",), vec![]);
+//! let abc: Arc<Node> = Node::new_from_iter(("abc",), vec![a, b, c]);
 //! ```
 //!
 //! ```text
-//!                          +-----------+
-//! +-------------+          |Node       |
-//! |Node         |    +---->|length: 0  |
-//! |length: 3    |    |     |header: "a"|
-//! |header: "abc"|    |     +-----------+
-//! |slice: [0]: +-----+     |Node       |
-//! |       [1]: +---------->|length: 0  |
-//! |       [2]: +-----+     |header: "b"|
-//! +-------------+    |     +-----------+
-//!                    |     |Node       |
-//!                    +---->|length: 0  |
-//!                          |header: "c"|
-//!                          +------------
+//!                         +----------+
+//!                         |Node      |
+//! +------------+    +---->|data: "a" |
+//! |Node        |    |     |slice: [] |
+//! |data: "abc" |    |     +----------+
+//! |slice: [0]: +----+     |Node      |
+//! |       [1]: +--------->|data: "b" |
+//! |       [2]: +----+     |slice: [] |
+//! +------------+    |     +----------+
+//!                   |     |Node      |
+//!                   +---->|data: "c" |
+//!                         |slice: [] |
+//!                         +----------+
 //! ```
 //!
 //! The exact times you will want to use this rather than just standard types varries.
@@ -118,17 +124,17 @@
 //!
 //! [`TryAllocSliceDst`] is the potentially fallible initialization version.
 //!
-//! All of these pieces are the glue, but [`SliceWithHeader`] and [`StrWithHeader`]
-//! put the pieces together into a safe package. They take a header and an iterator
-//! (or copyable slice) and put together all of the pieces to allocate a dynamically
-//! sized custom type.
+//! All of these pieces are the glue, but [`#[derive(SliceDst)`](derive.SliceDst.html) puts
+//! the pieces together into a safe package. The derive provides, in addition to implementing
+//! the trait, constructor functions that can be used to allocate a slice DST safely.
 //!
-//! Additionaly, though not strictly required, these types store the slice length inline.
-//! This gives them the ability to reconstruct pointers from fully type erased pointers
-#![cfg_attr(feature = "erasable", doc = "via the [`Erasable`] trait")]
-//! .
+//! The [`SliceWithHeader`] and [`StrWithHeader`] types used to be the recommended way to
+//! work with slice DSTS, but because these types additionally store the length of the tail
+#![cfg_attr(feature = "erasable", doc = "(in order to implement [`Erasable`])")]
+//! , it is now recommended to just derive `SliceDst` instead.
 
 extern crate alloc;
+extern crate self as slice_dst;
 
 #[cfg(has_ptr_slice_from_raw_parts)]
 use core::ptr::slice_from_raw_parts_mut as slice_from_raw_parts;
@@ -148,8 +154,8 @@ use {
 
 /// A custom slice-based dynamically sized type.
 ///
-/// Unless you are making a custom slice DST that needs to pack its length extremely well,
-/// then you should just use [`SliceWithHeader`] instead.
+/// You probably don't need to use this trait directly; use the constructors from
+/// [`#[derive(SliceDst)`](derive.SliceDst.html) instead.
 pub unsafe trait SliceDst {
     /// Get the layout of the slice-containing type with the given slice length.
     fn layout_for(len: usize) -> Layout;
@@ -175,6 +181,95 @@ pub unsafe trait SliceDst {
 #[cfg(feature = "derive")]
 #[doc(inline)]
 /// Derive macro to automatically implement the [`SliceDst`] trait.
+///
+/// This derive is meaningful for any `struct` that has a tail field
+/// with a type that is itself a `SliceDst`. Typically, this will be
+/// some `[T]` slice type, rather than another compound slice DST.
+///
+/// This macro requires this crate to be available as `::slice_dst`.
+///
+/// # Usage
+///
+/// A structure which derives `SliceDst` _must_ be `#[repr(C)]`. This is because layout of
+/// the structure must be known, and the default layout of Rust types is unspecified.
+/// If you want to keep `#[repr(Rust)]` layout of the sized fields, you can pack them all
+/// into their own type, or just bundle them into a tuple.
+///
+/// By default, this derive just implements the `SliceDst` trait, allowing allocation of
+/// the type behind any [`AllocSliceDst`] indirection. There are two additional attributes
+/// that you can add to create a safe constructor, depending on your type's definition.
+/// Both require that the tail type is an actual slice type, not a compound slice DST.
+///
+/// Whichever (or both) helpers you use, you'll want to create your own constructor function
+/// that is more targetted towards your type's use case rather than the awkward generated one.
+///
+/// ## `#[slice_dst(new_from_slice)]`
+///
+/// For trailing slices of `Copy` types.
+/// Shorthand for `#[slice_dst(new_from_slice = new_from_slice)]`.
+///
+/// For a given `ident` on the right hand of the `=`, generates a private
+/// `fn Self::ident<A>(sized: (⋯), slice: &[⋯]) -> A`, where `sized` is a tuple of all sized fields
+/// of the structure, `slice` is a reference to a slice of the tail slice type, and `A` is a generic
+/// for any `AllocSliceDst` container of the type being derived for. This calls `A::new_slice_dst`
+/// with an initialization closure that [`ptr::write`]s in all of the sized fields and
+/// [`ptr::copy_nonoverlapping`]s the slice into place.
+///
+/// ## `#[slice_dst(new_from_iter)]`
+///
+/// For trailing slices of non-`Copy` types. Involves much more complicated code than the simpler
+/// `new_from_slice` case, as it has to be correct and not leak in the face of panics and/or
+/// misimplemented iterators. Shorthand for `#[slice_dst(new_from_iter = new_from_iter`)].
+///
+/// For a given `ident` on the right hand of the `=`, generates a private
+/// `fn Self::ident<A, I>(sized: (⋯), iter: I) -> A`, where `sized` is a tuple of all sized fields
+/// of the structure, `I` is a generic for exact-size iterables over the tail slice's item type,
+/// and `A` is a generic for any `AllocSliceDst` container of the type being derived for. This
+/// calls `A::new_slice_dst` with an initialization closure that advances the iterator the expected
+/// number of times and [`ptr::write`]s each item in turn, checks that the iterator is indeed
+/// exhausted as expected, and then `ptr::write`s each sized field into place.
+///
+/// Note that even with a trait like [`TrustedLen`], this constructor still has to be careful to
+/// maintain correctness in the face of panics, as though we know the iterator will yield the
+/// expected number of items, acquiring those items could still panic and unwind.
+///
+///  [`ptr::write`]: std::ptr::write
+///  [`ptr::copy_nonoverlapping`]: std::ptr::copy_nonoverlapping
+///
+/// # Examples
+///
+/// ```rust
+/// # use slice_dst::*;
+/// #[derive(SliceDst)]
+/// #[repr(C)]
+/// #[slice_dst(new_from_slice)]
+/// pub struct SillyData {
+///     head: u32,
+///     data: u32,
+///     tail: [u32],
+/// }
+///
+/// impl SillyData {
+///     pub fn new(head: u32, data: u32, tail: &[u32]) -> Box<Self> {
+///         Self::new_from_slice((head, data), tail)
+///     }
+/// }
+///
+/// #[derive(SliceDst)]
+/// #[repr(C)]
+/// #[slice_dst(new_from_iter)]
+/// // This struct could be erasable and stored as a thin pointer!
+/// pub struct SliceWithInlineLen<T> {
+///     len: usize,
+///     slice: [T],
+/// }
+///
+/// impl<T> SliceWithInlineLen<T> {
+///     pub fn new(iter: impl ExactSizeIterator + Iterator<Item=T>) -> Box<Self> {
+///         Self::new_from_iter((iter.len(),), iter)
+///     }
+/// }
+/// ```
 pub use slice_dst_macros::SliceDst;
 
 unsafe impl<T> SliceDst for [T] {
@@ -371,4 +466,5 @@ unsafe impl<S: ?Sized + SliceDst> TryAllocSliceDst<S> for Arc<S> {
 pub(crate) mod layout_polyfill;
 mod provided_types;
 
+#[allow(deprecated)]
 pub use provided_types::{SliceWithHeader, StrWithHeader};

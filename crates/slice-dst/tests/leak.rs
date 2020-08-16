@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use {
     slice_dst::*,
     std::{

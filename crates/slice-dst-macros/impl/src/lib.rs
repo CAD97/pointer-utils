@@ -148,13 +148,13 @@ fn actually_derive_slice_dst(
     };
 
     let tail_layout = quote_spanned! {tail_field_ty.span()=>
-        <#tail_field_ty as SliceDst>::layout_for(len)
+        <#tail_field_ty as ::slice_dst::SliceDst>::layout_for(len)
     };
 
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
     let mut output_stream = quote! {
         #[allow(unsafe_code)]
-        unsafe impl #impl_generics SliceDst for #ident #ty_generics #where_clause {
+        unsafe impl #impl_generics ::slice_dst::SliceDst for #ident #ty_generics #where_clause {
             fn layout_for(len: usize) -> ::core::alloc::Layout {
                 let mut layout = ::core::alloc::Layout::new::<()>();
                 const err_msg: &'static str = concat!("too big `", stringify!(#ident), "` requested from `SliceDst::layout_for`");
