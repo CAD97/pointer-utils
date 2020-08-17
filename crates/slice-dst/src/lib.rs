@@ -136,10 +136,6 @@
 extern crate alloc;
 extern crate self as slice_dst;
 
-#[cfg(has_ptr_slice_from_raw_parts)]
-use core::ptr::slice_from_raw_parts_mut as slice_from_raw_parts;
-#[cfg(not(has_ptr_slice_from_raw_parts))]
-use core::slice::from_raw_parts_mut as slice_from_raw_parts;
 #[cfg(feature = "erasable")]
 use erasable::{Erasable, ErasedPtr};
 use {
@@ -274,7 +270,7 @@ pub use slice_dst_macros::SliceDst;
 
 unsafe impl<T> SliceDst for [T] {
     fn layout_for(len: usize) -> Layout {
-        layout_polyfill::layout_array::<T>(len).unwrap()
+        Layout::array::<T>(len).unwrap()
     }
 
     fn retype(ptr: ptr::NonNull<[()]>) -> ptr::NonNull<Self> {
@@ -317,7 +313,7 @@ where
             ptr::NonNull::new(alloc(layout) as *mut ())
         }
         .unwrap_or_else(|| handle_alloc_error(layout));
-        let ptr = ptr::NonNull::new_unchecked(slice_from_raw_parts(ptr.as_ptr(), len));
+        let ptr = ptr::NonNull::new_unchecked(ptr::slice_from_raw_parts_mut(ptr.as_ptr(), len));
         S::retype(ptr)
     }
 }
@@ -463,7 +459,6 @@ unsafe impl<S: ?Sized + SliceDst> TryAllocSliceDst<S> for Arc<S> {
     }
 }
 
-pub(crate) mod layout_polyfill;
 mod provided_types;
 
 #[allow(deprecated)]

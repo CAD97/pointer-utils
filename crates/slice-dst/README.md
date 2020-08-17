@@ -90,9 +90,7 @@ in exchange for moving node payloads to the heap alongside the children array.
 
 #### MSRV
 
-- MSRV is increased from 1.41.0 to 1.44.0, only when the `derive` feature is
-  enabled (which it is by default). The crate continues to compile with a MSRV
-  of 1.41.0 when the `derive` feature is deactivated.
+- MSRV is increased from 1.41.0 to 1.44.0.
 
 ### 1.5.0
 #### Additions
@@ -150,11 +148,8 @@ in the 1.1 line, and urge you to upgrade to 1.2 as soon as possible.
 ## Minimum Supported Rust Version
 
 
-With no features enabled, we require a minimum Rust version of 1.41.0.
-This is for an adjustment of local trait impl checking.
-
 The `derive` feature (default) requires a minimum Rust version of 1.44.0.
-This is for `Layout` manipulation methods done by the derive macro.
+This is for `Layout` manipulation methods stabilized in this version.
 
 Minimum version support is only guaranteed with minimal version resolution
 (`-Z minimal-versions`/`--minimal-versions`) due to how dependencies are handled.
