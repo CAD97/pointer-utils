@@ -15,6 +15,10 @@ pub fn main() -> io::Result<()> {
         }
     }
 
+    println!(
+        "{}> cargo build --release --target wasm32-unknown-unknown --target-dir target",
+        impl_dir_path.display(),
+    );
     let mut child = match Command::new("cargo")
         .args("build --release --target wasm32-unknown-unknown --target-dir target".split(' '))
         .current_dir(impl_dir_path)
@@ -34,7 +38,7 @@ pub fn main() -> io::Result<()> {
         },
         Ok(_) => match fs::canonicalize("src/slice_dst_macros_impl.wasm") {
             Ok(_) => Ok(()), // succeed if the wasm is there already
-            Err(_) => panic!("failed to build wasm; you need a nightly toolchain with the `wasm32-unknown-unknown` target to build slice-dst macros")
+            Err(_) => panic!("failed to build wasm; you need the `wasm32-unknown-unknown` target to build slice-dst macros")
         },
         Err(e) => panic!("failed to wait for `cargo` subprocess (source: {})", e),
     }
