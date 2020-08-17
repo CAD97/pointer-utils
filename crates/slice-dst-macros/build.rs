@@ -38,7 +38,7 @@ pub fn main() -> io::Result<()> {
         },
         Ok(_) => match fs::canonicalize("src/slice_dst_macros_impl.wasm") {
             Ok(_) => Ok(()), // succeed if the wasm is there already
-            Err(_) => panic!("failed to build wasm; you need the `wasm32-unknown-unknown` target to build slice-dst macros")
+            Err(_) => panic!("failed to build wasm; you need the `wasm32-unknown-unknown` target to build slice-dst macros from source"),
         },
         Err(e) => panic!("failed to wait for `cargo` subprocess (source: {})", e),
     }
