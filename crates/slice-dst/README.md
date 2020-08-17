@@ -43,29 +43,35 @@ With this setup, the memory layout looks vaguely like the following diagram:
 With this crate, however, the children array can be stored inline with the node's data:
 
 ```rust
-struct Node(Arc<SliceWithHeader<&'static str, Node>>);
+#[derive(SliceDst)]
+#[repr(C)]
+#[slice_dst(new_from_iter)]
+struct Node {
+    data: &'static str,
+    slice: [Arc<Node>],
+}
 
-let a = Node(SliceWithHeader::new("a", None));
-let b = Node(SliceWithHeader::new("b", None));
-let c = Node(SliceWithHeader::new("c", None));
-// this vec is just an easy way to get an ExactSizeIterator
-let abc = Node(SliceWithHeader::new("abc", vec![a, b, c]));
+// the generated constructor is deliberately awkward; create a wrapper to expose
+let a = Node::new_from_iter(("a",), vec![]);
+let b = Node::new_from_iter(("b",), vec![]);
+let c = Node::new_from_iter(("c",), vec![]);
+let abc: Arc<Node> = Node::new_from_iter(("abc",), vec![a, b, c]);
 ```
 
 ```text
-                         +-----------+
-+-------------+          |Node       |
-|Node         |    +---->|length: 0  |
-|length: 3    |    |     |header: "a"|
-|header: "abc"|    |     +-----------+
-|slice: [0]: +-----+     |Node       |
-|       [1]: +---------->|length: 0  |
-|       [2]: +-----+     |header: "b"|
-+-------------+    |     +-----------+
-                   |     |Node       |
-                   +---->|length: 0  |
-                         |header: "c"|
-                         +------------
+                        +----------+
+                        |Node      |
++------------+    +---->|data: "a" |
+|Node        |    |     |slice: [] |
+|data: "abc" |    |     +----------+
+|slice: [0]: +----+     |Node      |
+|       [1]: +--------->|data: "b" |
+|       [2]: +----+     |slice: [] |
++------------+    |     +----------+
+                  |     |Node      |
+                  +---->|data: "c" |
+                        |slice: [] |
+                        +----------+
 ```
 
 The exact times you will want to use this rather than just standard types varries.
@@ -74,6 +80,19 @@ This is still useful when using an arena: it reduces the allocations in the aren
 in exchange for moving node payloads to the heap alongside the children array.
 
 ## Changelist
+
+### 1.6.0
+#### Additions
+
+- Added the ability to derive `SliceDst`. The derive implements the trait and
+  optionally provides safe constructors for simple custom slice DSTS. This is
+  gated by a default-on feature, `derive`.
+
+#### MSRV
+
+- MSRV is increased from 1.41.0 to 1.44.0, only when the `derive` feature is
+  enabled (which it is by default). The crate continues to compile with a MSRV
+  of 1.41.0 when the `derive` feature is deactivated.
 
 ### 1.5.0
 #### Additions
@@ -130,8 +149,12 @@ in the 1.1 line, and urge you to upgrade to 1.2 as soon as possible.
 
 ## Minimum Supported Rust Version
 
-We require a minimum Rust version of 1.41.0.
+
+With no features enabled, we require a minimum Rust version of 1.41.0.
 This is for an adjustment of local trait impl checking.
+
+The `derive` feature (default) requires a minimum Rust version of 1.44.0.
+This is for `Layout` manipulation methods done by the derive macro.
 
 Minimum version support is only guaranteed with minimal version resolution
 (`-Z minimal-versions`/`--minimal-versions`) due to how dependencies are handled.
