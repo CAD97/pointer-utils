@@ -226,6 +226,7 @@ jobs:
         with:
           profile: minimal
           toolchain: nightly
+          default: true
           override: true
           components: miri
           target: wasm32-unknown-unknown
