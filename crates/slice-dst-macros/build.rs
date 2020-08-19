@@ -1,4 +1,4 @@
-use std::{fs, io, path::Path, process::Command};
+use std::{env, fs, io, path::Path, process::Command};
 
 pub fn main() -> io::Result<()> {
     println!("cargo:rerun-if-changed=src/slice_dst_macros_impl.wasm",);
@@ -15,15 +15,18 @@ pub fn main() -> io::Result<()> {
         }
     }
 
+    let cargo = env::var("CARGO").unwrap_or_else(|_| "cargo".into());
+
     println!(
-        "{}> cargo build --release --target wasm32-unknown-unknown --target-dir target",
+        "{}> {} build --release --target wasm32-unknown-unknown --target-dir target",
         impl_dir_path.display(),
+        &cargo,
     );
-    let mut child = match Command::new("cargo")
+    let mut command = Command::new(&cargo);
+    command
         .args("build --release --target wasm32-unknown-unknown --target-dir target".split(' '))
-        .current_dir(impl_dir_path)
-        .spawn()
-    {
+        .current_dir(impl_dir_path);
+    let mut child = match command.spawn() {
         Ok(child) => child,
         Err(e) => panic!("failed to spawn `cargo` subprocess (source: {})", e),
     };
@@ -57,7 +60,7 @@ fn error_could_not_build_wasm(impl_dir_path: &Path) -> ! {
 Could not build slice-dst macros, and you don't have `rustup` available.
 The command
     build --release --target wasm32-unknown-unknown --target-dir target
-must succeed when run in the directory
+must succeed when run with an empty environment in the directory
     {}
 to build slice-dst's macros from source. Either do what's required to make
 that command succeed in your installation of cargo, or duplicate a copy of

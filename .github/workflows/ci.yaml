@@ -230,6 +230,9 @@ jobs:
           override: true
           components: miri
           target: wasm32-unknown-unknown
+      
+      - name: Install wasm32 and I mean it this time
+        run: rustup target add wasm32-unknown-unknown --toolchain nightly-x86_64-unknown-linux-gnu
 
       - name: Cargo target cache
         uses: actions/cache@v1
