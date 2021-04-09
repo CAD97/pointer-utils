@@ -28,6 +28,9 @@ optional = true
 [build-dependencies]
 autocfg = "1.0.0"
 
+[dev-dependencies]
+ref-cast = "1.0"
+
 [[test]]
 name = "smoke"
 path = "tests/smoke.rs"
