@@ -95,8 +95,6 @@ macro_rules! rc_box {
 
         // ~~~ $Rc<T> and Box<T> like inherent impls ~~~ //
 
-        // downcast is pretty useless without CoerceUnsized
-
         impl $RcBox<dyn Any + 'static> {
             doc_comment! {
                 concat!("Attempt to downcast the box to a concrete type.
@@ -122,7 +120,8 @@ print_if_string(my_number.try_into().unwrap());
 ```
 
 The unsizing as `", stringify!($Rc), "` is required until
-[DST coercions](https://github.com/rust-lang/rust/issues/27732) are stabilized."),
+[DST coercions](https://github.com/rust-lang/rust/issues/27732) are stabilized. Alternatively,
+activate the `unsize` feature to convert the pointer via an explicit method call."),
                 #[inline]
                 pub fn downcast<T>(self) -> Result<$RcBox<T>, Self>
                 where T: Any,
@@ -164,7 +163,8 @@ print_if_string(my_number.try_into().unwrap());
 ```
 
 The unsizing as `", stringify!($Rc), "` is required until
-[DST coercions](https://github.com/rust-lang/rust/issues/27732) are stabilized."),
+[DST coercions](https://github.com/rust-lang/rust/issues/27732) are stabilized. Alternatively,
+activate the `unsize` feature to convert the pointer via an explicit method call."),
                 #[inline]
                 pub fn downcast<T>(self) -> Result<$RcBox<T>, Self>
                 where T: Any + Send
@@ -206,7 +206,8 @@ print_if_string(my_number.try_into().unwrap());
 ```
 
 The unsizing as `", stringify!($Rc), "` is required until
-[DST coercions](https://github.com/rust-lang/rust/issues/27732) are stabilized."),
+[DST coercions](https://github.com/rust-lang/rust/issues/27732) are stabilized. Alternatively,
+activate the `unsize` feature to convert the pointer via an explicit method call."),
                 #[inline]
                 pub fn downcast<T>(self) -> Result<$RcBox<T>, Self>
                 where T: Any + Send + Sync
