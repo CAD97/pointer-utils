@@ -639,6 +639,7 @@ then the data will be pinned in memory and unable to be moved."),
         #[cfg(feature = "unsize")]
         doc_comment! {
             concat!("Unsizes a pointer using the `unsize` crate.
+
 # Usage
 
 ```
@@ -653,7 +654,7 @@ let value = (*unique)();
 assert_eq!(value, 42);
 ```
 
-Another common usage would be to create an `dyn Any`.
+Another common usage would be to create a `dyn Any`.
 
 fn print_if_string(value: ", stringify!($RcBox), r#"<dyn Any>) {
     if let Ok(string) = value.downcast::<String>() {
