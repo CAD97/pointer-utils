@@ -95,8 +95,6 @@ macro_rules! rc_box {
 
         // ~~~ $Rc<T> and Box<T> like inherent impls ~~~ //
 
-        // downcast is pretty useless without CoerceUnsized
-
         impl $RcBox<dyn Any + 'static> {
             doc_comment! {
                 concat!("Attempt to downcast the box to a concrete type.
@@ -122,7 +120,8 @@ print_if_string(my_number.try_into().unwrap());
 ```
 
 The unsizing as `", stringify!($Rc), "` is required until
-[DST coercions](https://github.com/rust-lang/rust/issues/27732) are stabilized."),
+[DST coercions](https://github.com/rust-lang/rust/issues/27732) are stabilized. Alternatively,
+activate the `unsize` feature to convert the pointer via an explicit method call."),
                 #[inline]
                 pub fn downcast<T>(self) -> Result<$RcBox<T>, Self>
                 where T: Any,
@@ -164,7 +163,8 @@ print_if_string(my_number.try_into().unwrap());
 ```
 
 The unsizing as `", stringify!($Rc), "` is required until
-[DST coercions](https://github.com/rust-lang/rust/issues/27732) are stabilized."),
+[DST coercions](https://github.com/rust-lang/rust/issues/27732) are stabilized. Alternatively,
+activate the `unsize` feature to convert the pointer via an explicit method call."),
                 #[inline]
                 pub fn downcast<T>(self) -> Result<$RcBox<T>, Self>
                 where T: Any + Send
@@ -206,7 +206,8 @@ print_if_string(my_number.try_into().unwrap());
 ```
 
 The unsizing as `", stringify!($Rc), "` is required until
-[DST coercions](https://github.com/rust-lang/rust/issues/27732) are stabilized."),
+[DST coercions](https://github.com/rust-lang/rust/issues/27732) are stabilized. Alternatively,
+activate the `unsize` feature to convert the pointer via an explicit method call."),
                 #[inline]
                 pub fn downcast<T>(self) -> Result<$RcBox<T>, Self>
                 where T: Any + Send + Sync
@@ -634,6 +635,51 @@ then the data will be pinned in memory and unable to be moved."),
 
         #[cfg(feature = "std")]
         impl<T: ?Sized> UnwindSafe for $RcBox<T> where Box<T>: UnwindSafe {}
+
+        #[cfg(feature = "unsize")]
+        doc_comment! {
+            concat!("Unsizes a pointer using the `unsize` crate.
+
+# Usage
+
+```
+# use rc_box::*;
+use unsize::{Coercion, CoerceUnsize};
+
+let unique = ", stringify!($RcBox), "::new(|| 42u32);
+let unique:", stringify!($RcBox), r"<dyn Fn() -> u32> =
+    unique.unsize(Coercion::<_, dyn Fn() -> u32>::to_fn());
+
+let value = (*unique)();
+assert_eq!(value, 42);
+```
+
+Another common usage would be to create a `dyn Any`.
+
+fn print_if_string(value: ", stringify!($RcBox), r#"<dyn Any>) {
+    if let Ok(string) = value.downcast::<String>() {
+        println!("String ({}): {}", string.len(), string);
+    }
+}
+
+let my_string = "Hello World".to_string();
+let my_string: "#, stringify!($RcBox), "<dyn Any> = ", stringify!($RcBox), "::new(my_string).unsize(Coercion::to_any());
+print_if_string(my_string);
+let my_number: ", stringify!($RcBox), "<dyn Any> = ", stringify!($RcBox), "::new(0i8).unsize(Coercion::to_any());
+print_if_string(my_number);
+```"),
+            unsafe impl<T, U: ?Sized> unsize::CoerciblePtr<U> for $RcBox<T> {
+                type Pointee = T;
+                type Output = $RcBox<U>;
+                fn as_sized_ptr(&mut self) -> *mut T {
+                    $RcBox::as_raw(self).as_ptr()
+                }
+                unsafe fn replace_ptr(self, new: *mut U) -> $RcBox<U> {
+                    let new = $RcBox::into_raw(self).replace_ptr(new);
+                    $RcBox::from_raw(new.as_ptr() as *const U)
+                }
+            }
+        }
     )*};
 }
 

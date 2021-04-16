@@ -79,6 +79,7 @@ version = "1.1.1"
 dependencies = [
  "erasable 1.2.1",
  "slice-dst 1.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "unsize",
 ]
 
 [[package]]
@@ -103,4 +104,13 @@ checksum = "ec1a6721a6d7c2997cea654e3eda6a827432c5dd0a0ed923ddd9b1d691203412"
 dependencies = [
  "autocfg",
  "erasable 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "unsize"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4fa7a7a734c1a5664a662ddcea0b6c9472a21da8888c957c7f1eaa09dba7a939"
+dependencies = [
+ "autocfg",
 ]
