@@ -1,3 +1,5 @@
+#![allow(deprecated)] // this is a polyfill module
+
 use core::{
     alloc::{Layout, LayoutErr},
     cmp,
