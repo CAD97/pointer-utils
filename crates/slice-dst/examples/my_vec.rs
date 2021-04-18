@@ -4,7 +4,6 @@ use std::{
     ops::Deref,
 };
 
-use ref_cast::RefCast;
 use slice_dst::SliceWithHeader;
 
 /// Default capacity of [`MyVec`].
@@ -12,6 +11,10 @@ const MY_VEC_DEFAULT_CAPACITY: usize = 4;
 
 /// On the heap we will store the number of used elements in the slice (length)
 /// and a slice of (maybe uninitialized) values.
+///
+/// For the sake of simplicity of this example the metadata is just a [`usize`].
+/// However, in real use cases the metadata might be more complex than a
+/// [`Copy`] type.
 type HeapData<T> = SliceWithHeader<usize, MaybeUninit<T>>;
 
 /// Our [`Vec`] implementation.
@@ -59,7 +62,7 @@ impl<T> Drop for MyVec<T> {
         let len = self.len();
         self.0.slice.iter_mut().take(len).for_each(|t| {
             unsafe {
-                // Safe as only initialized values iterated.
+                // SAFETY: `take(len)` ensures that only initialized elements are dropped.
                 std::ptr::drop_in_place(mem::transmute::<_, *mut T>(t));
             };
         })
@@ -70,13 +73,23 @@ impl<T> Deref for MyVec<T> {
     type Target = MySlice<T>;
 
     fn deref(&self) -> &Self::Target {
-        MySlice::ref_cast(&self.0)
+        self.as_ref()
     }
 }
 
 impl<T> AsRef<MySlice<T>> for MyVec<T> {
     fn as_ref(&self) -> &MySlice<T> {
-        &*self
+        // SAFETY: This is only safe because `MySlice` is a 'new-type' struct
+        // that wraps the inner data of `MyVec`. Furthermore, `MySlice` has
+        // `#[repr(transparent)]` which ensures that layout and alignment are
+        // the same as `HeapData` directly.
+        //
+        // A more sophisticated and safe way to perform such tasks is to use
+        // the derive macro from `ref-cast` crate. However, as it implements a
+        // trait this would users enable to always cast `&MySlice` to
+        // `&HeapData` which in turn would allow to modify the length, breaking
+        // the contract that ensures the safety of `MyVec`.
+        unsafe { mem::transmute(self.0.as_ref()) }
     }
 }
 
@@ -84,7 +97,6 @@ impl<T> AsRef<MySlice<T>> for MyVec<T> {
 ///
 /// We use the `ref-cast` crate to wrap the [`HeapData`] in our new-type
 /// which allows us to implement our own functions.
-#[derive(RefCast)]
 #[repr(transparent)]
 struct MySlice<T>(HeapData<T>);
 
@@ -97,7 +109,7 @@ impl<T> MySlice<T> {
     }
     fn iter(&self) -> impl Iterator<Item = &T> {
         self.0.slice.iter().take(self.len()).map(|t| unsafe {
-            // Safe as only the initialized elements are iterated.
+            // SAFETY: `take(len)` ensures that only initialized elements are iterated.
             mem::transmute(t)
         })
     }
