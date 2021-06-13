@@ -1,34 +1,37 @@
 name: CI
 on:
-  push:
+  pull_request:
+  push: # bors
     branches:
       - staging
       - trying
 
+env:
+  CI: 1
+  CARGO_INCREMENTAL: 0
+  CARGO_PROFILE_DEV_DEBUG: false
+  CARGO_PROFILE_RELEASE_DEBUG: false
+  RUSTFLAGS: -D warnings -W unreachable-pub
+
 jobs:
-  tests:
-    name: Tests
+  cargo-test:
+    name: Tests (beta)
+    if: ${{ github.event.pusher.name == 'bors[bot]' }}
     runs-on: ubuntu-latest
-    env:
-      RUSTFLAGS: -D warnings
-      CARGO_INCREMENTAL: 0
     steps:
 
       - name: Checkout repository
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
 
-      - name: Install toolchain
+      - name: Install beta toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: beta
           profile: minimal
           override: true
 
-      - name: Cargo target cache
-        uses: actions/cache@v1
-        with:
-          path: target
-          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+      - name: Enable caching
+        uses: Swatinem/rust-cache@v1.3.0
 
       - name: Compile
         uses: actions-rs/cargo@v1
@@ -36,53 +39,41 @@ jobs:
           command: test
           args: --all --all-targets --examples --no-run
 
-      - name: Test
+      - name: Run tests
         uses: actions-rs/cargo@v1
         with:
           command: test
           args: --all --all-targets --examples
 
-      - name: Prepare build directory for cache
-        run: |
-          find ./target/debug -maxdepth 1 -type f -delete \
-          && rm -fr ./target/debug/{deps,.fingerprint}/{*erasable*,*ptr-union*,*rc-borrow*,*rc-box*,*slice-dst*} \
-          && rm -f  ./target/.rustc_info.json
-
-  msrv-tests:
-    name: MSRV Tests
+  cargo-test-msrv:
+    name: Tests (1.41.0)
     runs-on: ubuntu-latest
-    env:
-      RUSTFLAGS: -D warnings
-      CARGO_INCREMENTAL: 0
     steps:
 
       - name: Checkout repository
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
 
-      - name: Install nightly toolchain
+      - name: Install arbitrary nightly toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly-2020-01-01
           profile: minimal
 
-      - name: Install minimum supported stable toolchain
+      - name: Install msrv toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: 1.41.0
           profile: minimal
           override: true
 
-      - name: Generate lockfile
+      - name: Generate minimal-versions lockfile
         uses: actions-rs/cargo@v1
         with:
           command: +nightly-2020-01-01
           args: -Z minimal-versions generate-lockfile
 
-      - name: Cargo target cache
-        uses: actions/cache@v1
-        with:
-          path: target
-          key: ${{ runner.os }}-cargo-msrv-target-${{ hashFiles('**/Cargo.lock') }}
+      - name: Enable caching
+        uses: Swatinem/rust-cache@v1.3.0
 
       - name: Compile
         uses: actions-rs/cargo@v1
@@ -90,30 +81,21 @@ jobs:
           command: test
           args: --locked --all --all-targets --examples --no-run
 
-      - name: Test
+      - name: Run tests
         uses: actions-rs/cargo@v1
         with:
           command: test
           args: --locked --all --all-targets --examples
 
-      - name: Prepare build directory for cache
-        run: |
-          find ./target/debug -maxdepth 1 -type f -delete \
-          && rm -fr ./target/debug/{deps,.fingerprint}/{*erasable*,*ptr-union*,*rc-borrow*,*rc-box*,*slice-dst*} \
-          && rm -f  ./target/.rustc_info.json
-
-  fmt:
-    name: Rustfmt
+  cargo-fmt:
+    name: Formatting
     runs-on: ubuntu-latest
-    env:
-      RUSTFLAGS: -D warnings
-      CARGO_INCREMENTAL: 0
     steps:
 
       - name: Checkout repository
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
 
-      - name: Install toolchain
+      - name: Install beta toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -127,18 +109,15 @@ jobs:
           command: fmt
           args: --all -- --check
 
-  check:
-    name: Clippy
+  cargo-clippy:
+    name: Lints
     runs-on: ubuntu-latest
-    env:
-      RUSTFLAGS: -D warnings
-      CARGO_INCREMENTAL: 0
     steps:
 
       - name: Checkout repository
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
 
-      - name: Install toolchain
+      - name: Install beta toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -147,23 +126,21 @@ jobs:
           components: clippy
 
       - name: Check style
-        uses: actions-rs/clippy-check@v1
+        uses: actions-rs/cargo@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          command: clippy
           args: --all --all-targets
 
-  miri:
+  cargo-miri:
     name: Miri
+    if: ${{ github.event.pusher.name == 'bors[bot]' }}
     runs-on: ubuntu-latest
-    env:
-      RUSTFLAGS: -D warnings
-      CARGO_INCREMENTAL: 0
     steps:
 
       - name: Checkout repository
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
 
-      - name: Install toolchain
+      - name: Install nightly toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -171,11 +148,8 @@ jobs:
           override: true
           components: miri
 
-      - name: Cargo target cache
-        uses: actions/cache@v1
-        with:
-          path: target
-          key: ${{ runner.os }}-cargo-miri-target-${{ hashFiles('**/Cargo.lock') }}
+      - name: Enable caching
+        uses: Swatinem/rust-cache@v1.3.0
 
       - name: Miri setup
         uses: actions-rs/cargo@v1
@@ -183,31 +157,8 @@ jobs:
           command: miri
           args: setup
 
-      # cargo-miri does not support workspaces yet [rust-lang/miri#1001]
-      # so run `cargo miri test` in each crate directory manually.
-      # We don't seem to be able to change the working directory of actions-rc/cargo.
-      - name: Miri test erasable
-        working-directory: ./crates/erasable
-        run: cargo miri test --all-features
-
-      - name: Miri test ptr-union
-        working-directory: ./crates/ptr-union
-        run: cargo miri test --all-features
-
-      - name: Miri test rc-borrow
-        working-directory: ./crates/rc-borrow
-        run: cargo miri test --all-features
-
-      - name: Miri test rc-box
-        working-directory: ./crates/rc-box
-        run: cargo miri test --all-features
-
-      - name: Miri test slice-dst
-        working-directory: ./crates/slice-dst
-        run: cargo miri test --all-features
-
-      - name: Prepare build directory for cache
-        run: |
-          find ./target/debug -maxdepth 1 -type f -delete \
-          && rm -fr ./target/debug/{deps,.fingerprint}/{*erasable*,*ptr-union*,*rc-borrow*,*rc-box*,*slice-dst*} \
-          && rm -f  ./target/.rustc_info.json
+      - name: Miri test
+        uses: actions-rs/cargo@v1
+        with:
+          command: miri
+          args: test --workspace --all-features
