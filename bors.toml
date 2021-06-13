@@ -2,9 +2,9 @@ cut-body-after = "---"
 delete-merged-branches = true
 
 status = [
-  "Clippy",
+  "Tests (beta)",
+  "Tests (1.41.0)",
+  "Formatting",
+  "Lints",
   "Miri",
-  "MSRV Tests",
-  "Rustfmt",
-  "Tests",
 ]

@@ -5,33 +5,32 @@ on:
       - master
 
 jobs:
-  rustdoc:
+  cargo-doc:
     runs-on: ubuntu-latest
     env:
       CARGO_INCREMENTAL: 0
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
 
-      - name: Install Rust toolchain
+      - name: Install beta toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: beta
           profile: minimal
           override: true
 
-      - name: Build Documentation
+      - name: Build docs
         uses: actions-rs/cargo@v1
         with:
           command: doc
           args: --no-deps
 
-      - name: Deploy Docs
-        uses: peaceiris/actions-gh-pages@v2.6.0-rc0
-        env:
-          ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-          PUBLISH_BRANCH: gh-pages
-          PUBLISH_DIR: ./target/doc
+      - name: Deploy docs
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          forceOrphan: true
+          deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+          github_token: ${{ github.token }}
+          public_dir: ./target/doc
+          force_orphan: true
