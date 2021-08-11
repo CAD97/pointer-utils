@@ -32,5 +32,5 @@ jobs:
         with:
           deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
           github_token: ${{ github.token }}
-          public_dir: ./target/doc
+          publish_dir: ./target/doc
           force_orphan: true
