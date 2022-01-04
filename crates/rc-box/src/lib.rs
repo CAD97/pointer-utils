@@ -84,6 +84,19 @@ macro_rules! rc_box {
             }
         }
 
+        impl<T: ?Sized> TryFrom<Pin<$Rc<T>>> for Pin<$RcBox<T>> {
+            type Error = Pin<$Rc<T>>;
+            fn try_from(v: Pin<$Rc<T>>) -> Result<Pin<$RcBox<T>>, Pin<$Rc<T>>> {
+                unsafe {
+                    let v = Pin::into_inner_unchecked(v);
+                    match $RcBox::<T>::try_from(v) {
+                        Ok(this) => Ok(Pin::new_unchecked(this)),
+                        Err(v) => Err(Pin::new_unchecked(v)),
+                    }
+                }
+            }
+        }
+
         impl<T: ?Sized> $RcBox<T> {
             unsafe fn from_unchecked<V>(v: V) -> Self
             where
