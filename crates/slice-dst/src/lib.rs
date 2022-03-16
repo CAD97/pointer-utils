@@ -158,6 +158,10 @@ use {
 ///
 /// Unless you are making a custom slice DST that needs to pack its length extremely well,
 /// then you should just use [`SliceWithHeader`] instead.
+///
+/// # Safety
+///
+/// Must be implemented as described and may be relied upon by generic code.
 pub unsafe trait SliceDst {
     /// Get the layout of the slice-containing type with the given slice length.
     fn layout_for(len: usize) -> Layout;
@@ -263,6 +267,10 @@ where
 ///
 /// This is not a blanket impl due to coherence rules; if the blanket impl were present,
 /// it would be impossible to implement `AllocSliceDst` instead of `TryAllocSliceDst`.
+///
+/// # Safety
+///
+/// Must be implemented as described and may be relied upon by generic code.
 pub unsafe trait AllocSliceDst<S: ?Sized + SliceDst> {
     /// Create a new custom slice DST.
     ///
@@ -297,6 +305,10 @@ macro_rules! impl_alloc_by_try_alloc {
 
 /// Types that can allocate a custom slice DST within them,
 /// given a fallible initialization function.
+///
+/// # Safety
+///
+/// Must be implemented as described and may be relied upon by generic code.
 pub unsafe trait TryAllocSliceDst<S: ?Sized + SliceDst>: AllocSliceDst<S> + Sized {
     /// Create a new custom slice DST with a fallible initialization function.
     ///

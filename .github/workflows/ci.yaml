@@ -15,7 +15,7 @@ env:
 
 jobs:
   cargo-test:
-    name: Tests (beta)
+    name: Tests
     if: ${{ github.event.pusher.name == 'bors[bot]' }}
     runs-on: ubuntu-latest
     steps:
@@ -23,10 +23,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Install beta toolchain
+      - name: Install toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: beta
+          toolchain: 1.59.0
           profile: minimal
           override: true
 
@@ -56,7 +56,7 @@ jobs:
       - name: Install arbitrary nightly toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2020-01-01
+          toolchain: nightly-2022-01-01
           profile: minimal
 
       - name: Install msrv toolchain
@@ -69,7 +69,7 @@ jobs:
       - name: Generate minimal-versions lockfile
         uses: actions-rs/cargo@v1
         with:
-          command: +nightly-2020-01-01
+          command: +nightly-2022-01-01
           args: -Z minimal-versions generate-lockfile
 
       - name: Enable caching
@@ -95,11 +95,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Install beta toolchain
+      - name: Instal toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: beta
+          toolchain: 1.59.0
           override: true
           components: rustfmt
 
@@ -121,7 +121,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: beta
+          toolchain: 1.59.0
           override: true
           components: clippy
 

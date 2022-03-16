@@ -8,7 +8,7 @@ use core::{
 #[inline]
 pub(crate) fn extend_layout(this: &Layout, next: Layout) -> Result<(Layout, usize), LayoutErr> {
     let new_align = cmp::max(this.align(), next.align());
-    let pad = layout_padding_needed_for(&this, next.align());
+    let pad = layout_padding_needed_for(this, next.align());
     let offset = this.size().checked_add(pad).ok_or_else(layout_err)?;
     let new_size = offset.checked_add(next.size()).ok_or_else(layout_err)?;
     let layout = Layout::from_size_align(new_size, new_align)?;

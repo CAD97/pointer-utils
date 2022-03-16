@@ -191,6 +191,10 @@ pub unsafe trait ErasablePtr {
 ///
 /// This trait is automatically implemented for all sized types,
 /// and can be manually implemented for unsized types that know their own metadata.
+///
+/// # Safety
+///
+/// Must be implemented as described and may be relied upon by generic code.
 pub unsafe trait Erasable {
     /// Turn this erasable pointer into an erased pointer.
     ///
