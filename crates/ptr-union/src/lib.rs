@@ -439,18 +439,20 @@ macro_rules! impl_union {
                 unset_any_tag(self.raw, $mask)
             }
 
-            /// Dereference the current pointer.
-            ///
-            /// Performs a dynamic alignment check on the dereferenced pointer.
-            pub fn try_deref<'a>(&'a self) -> Option<$Union<$(&'a $A::Target),*>>
-            where
-                $($A: Deref,)*
-                $(&'a $A::Target: ErasablePtr,)*
-            {
-                $(if let Some(this) = self.$a() {
-                    paste::paste! { $Union::[<new_ $a>](this).ok() }
-                } else)* {
-                    None
+            paste::paste! {
+                /// Dereference the current pointer.
+                ///
+                /// Performs a dynamic alignment check on the dereferenced pointer.
+                pub fn try_deref<'a>(&'a self) -> Option<$Union<$(&'a $A::Target),*>>
+                where
+                    $($A: Deref,)*
+                    $(&'a $A::Target: ErasablePtr,)*
+                {
+                    $(if let Some(this) = self.$a() {
+                        $Union::[<new_ $a>](this).ok()
+                    } else)* {
+                        None
+                    }
                 }
             }
         }
@@ -463,9 +465,9 @@ macro_rules! impl_union {
                 }
             }
 
-            /// Pack this loose enum into a pointer union.
-            pub fn try_pack(self) -> Result<$Union<$($A),*>, Self> {
-                paste::paste! {
+            paste::paste! {
+                /// Pack this loose enum into a pointer union.
+                pub fn try_pack(self) -> Result<$Union<$($A),*>, Self> {
                     match self {
                         $($Enum::$A(this) => $Union::[<new_ $a>](this).map_err(Self::$A),)*
                     }
