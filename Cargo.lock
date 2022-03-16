@@ -41,7 +41,7 @@ checksum = "0744126afe1a6dd7f394cb50a716dbe086cb06e255e53d8d0185d82828358fb5"
 
 [[package]]
 name = "ptr-union"
-version = "2.2.0"
+version = "2.2.1"
 dependencies = [
  "autocfg",
  "erasable 1.2.1",
@@ -58,7 +58,7 @@ dependencies = [
 
 [[package]]
 name = "rc-box"
-version = "1.1.1"
+version = "1.2.0"
 dependencies = [
  "erasable 1.2.1",
  "slice-dst 1.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
