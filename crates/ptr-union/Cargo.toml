@@ -1,6 +1,6 @@
 [package]
 name = "ptr-union"
-version = "2.1.0"
+version = "2.2.0"
 edition = "2018"
 
 authors = ["Christopher Durham (cad97) <cad97@cad97.com>"]
@@ -14,22 +14,19 @@ license = "MIT OR Apache-2.0"
 [package.metadata.workspaces]
 independent = true
 
-[badges]
-maintenance = { status = "passively-maintained" }
-
 [features]
 default = ["alloc"]
 alloc = ["erasable/alloc"]
 
 [dependencies]
-paste = "0.1.10"
+paste = "1.0.6"
 
 [dependencies.erasable]
 version = "1.0.0"
 path = "../erasable"
 
 [build-dependencies]
-autocfg = "1.0.0"
+autocfg = "1.1.0"
 
 [[test]]
 name = "smoke"

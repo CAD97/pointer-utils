@@ -3,6 +3,15 @@ by storing the tag in the alignment bits.
 
 ## Changelist
 
+### 2.2.0
+#### Added
+
+- `Union8` and `Union16` types. You can now use up to the four low bits for a
+  tagged pointer.
+- `Union*` now has safe `new_$variant` and `try_deref` methods, and `Enum*` has
+  a `try_pack` method. These do a dynamic alignment check that the pointer is
+  sufficiently aligned, and allow `Union` types to be used without `unsafe`.
+
 ### 2.1.0
 #### Added
 
