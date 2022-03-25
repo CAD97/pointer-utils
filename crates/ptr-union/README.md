@@ -3,6 +3,16 @@ by storing the tag in the alignment bits.
 
 ## Changelist
 
+### 2.2.2
+#### Fixed
+
+- Crate now works under a [strict provenance] model. (In short, it doesn't use inttoptr.)
+- Crate is now tested with many more strictness Miri flags. Notably,
+  - `-Zmiri-check-number-validity` and
+  - `-Zmiri-tag-raw-pointers`
+
+[strict provenance]: https://github.com/rust-lang/rust/issues/95228
+
 ### 2.2.0
 #### Added
 

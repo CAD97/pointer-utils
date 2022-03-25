@@ -41,7 +41,7 @@ checksum = "0744126afe1a6dd7f394cb50a716dbe086cb06e255e53d8d0185d82828358fb5"
 
 [[package]]
 name = "ptr-union"
-version = "2.2.1"
+version = "2.2.2"
 dependencies = [
  "autocfg",
  "erasable 1.2.1",

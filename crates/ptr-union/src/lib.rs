@@ -38,29 +38,61 @@ const TAG_N: usize = 0b1101;
 const TAG_O: usize = 0b1110;
 const TAG_P: usize = 0b1111;
 
+// See rust-lang/rust#95228 for why these are necessary.
+fn ptr_addr<T>(this: *mut T) -> usize {
+    // FIXME(strict_provenance_magic): I am magic and should be a compiler intrinsic.
+    this as usize
+}
+
+fn ptr_with_addr<T>(this: *mut T, addr: usize) -> *mut T {
+    // FIXME(strict_provenance_magic): I am magic and should be a compiler intrinsic.
+    //
+    // In the mean-time, this operation is defined to be "as if" it was
+    // a wrapping_offset, so we can emulate it as such. This should properly
+    // restore pointer provenance even under today's compiler.
+    let this_addr = ptr_addr(this) as isize;
+    let dest_addr = addr as isize;
+    let offset = dest_addr.wrapping_sub(this_addr);
+
+    // This is the canonical desugarring of this operation
+    this.cast::<u8>().wrapping_offset(offset).cast::<T>()
+}
+
+fn ptr_map_addr<T>(this: *mut T, f: impl FnOnce(usize) -> usize) -> *mut T {
+    ptr_with_addr(this, f(ptr_addr(this)))
+}
+
+fn ptr_tag<T>(this: *mut T, tag: usize) -> *mut T {
+    ptr_map_addr(this, |addr| addr | tag)
+}
+
+fn ptr_mask<T>(this: *mut T, mask: usize) -> *mut T {
+    ptr_map_addr(this, |addr| addr & mask)
+}
+
 #[inline(always)]
 fn check_tag(ptr: ErasedPtr, mask: usize, tag: usize) -> bool {
     debug_assert_eq!(tag & mask, tag);
-    (ptr.as_ptr() as usize & mask) == tag
+    ptr_addr(ptr_mask(ptr.as_ptr(), mask)) == tag
 }
 
 #[inline(always)]
 fn set_tag(ptr: ErasedPtr, mask: usize, tag: usize) -> ErasedPtr {
     debug_assert_eq!(tag & mask, tag);
     debug_assert!(check_tag(ptr, mask, 0));
-    unsafe { ErasedPtr::new_unchecked((ptr.as_ptr() as usize | tag) as *mut _) }
+    unsafe { ErasedPtr::new_unchecked(ptr_tag(ptr.as_ptr(), tag)) }
 }
 
 #[inline(always)]
 fn unset_tag(ptr: ErasedPtr, mask: usize, tag: usize) -> ErasedPtr {
     debug_assert_eq!(tag & mask, tag);
     debug_assert!(check_tag(ptr, mask, tag));
-    unsafe { ErasedPtr::new_unchecked((ptr.as_ptr() as usize & !mask) as *mut _) }
+    unsafe { ErasedPtr::new_unchecked(ptr_mask(ptr.as_ptr(), !mask)) }
 }
 
 #[inline(always)]
 fn unset_any_tag(ptr: ErasedPtr, mask: usize) -> ErasedPtr {
-    unsafe { ErasedPtr::new_unchecked((ptr.as_ptr() as usize & !mask) as *mut _) }
+    unsafe { ErasedPtr::new_unchecked(ptr_mask(ptr.as_ptr(), !mask)) }
 }
 
 #[cfg(has_never)]
