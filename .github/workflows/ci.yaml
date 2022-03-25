@@ -12,6 +12,7 @@ env:
   CARGO_PROFILE_DEV_DEBUG: false
   CARGO_PROFILE_RELEASE_DEBUG: false
   RUSTFLAGS: -D warnings -W unreachable-pub
+  MIRIFLAGS: -Zmiri-check-number-validity -Zmiri-symbolic-alignment-check -Zmiri-tag-raw-pointers
 
 jobs:
   cargo-test:
