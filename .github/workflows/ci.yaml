@@ -134,7 +134,6 @@ jobs:
 
   cargo-miri:
     name: Miri
-    if: ${{ github.event.pusher.name == 'bors[bot]' }}
     runs-on: ubuntu-latest
     steps:
 
