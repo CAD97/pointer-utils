@@ -32,3 +32,30 @@ fn thinning() {
     Thin::with_mut(&mut thin, |thin| *thin = Default::default());
     let boxed = Thin::into_inner(thin);
 }
+
+#[test]
+fn withfn() {
+    let boxed: Box<Big> = Default::default();
+
+    let erased: ErasedPtr = ErasablePtr::erase(boxed);
+
+    unsafe {
+        <Box<Big> as ErasablePtr>::with(&erased, |bigbox| {
+            assert_eq!(*bigbox, Default::default());
+        })
+    }
+}
+
+#[test]
+fn with_mut_fn() {
+    let boxed: Box<Big> = Default::default();
+
+    let mut erased: ErasedPtr = ErasablePtr::erase(boxed);
+
+    unsafe {
+        <Box<Big> as ErasablePtr>::with_mut(&mut erased, |bigbox| {
+            bigbox.0[0] = 123456;
+            assert_ne!(*bigbox, Default::default());
+        })
+    }
+}
