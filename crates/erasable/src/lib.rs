@@ -201,6 +201,7 @@ pub unsafe trait ErasablePtr {
     /// };
     ///
     /// assert_eq!(*cloned, 123);
+    /// # unsafe {<Rc<i32> as ErasablePtr>::unerase(erased)}; // drop it
     /// ```
     ///
     /// The main purpose of this function is to be able implement recursive types that would
@@ -215,7 +216,7 @@ pub unsafe trait ErasablePtr {
         Self: Sized,
         F: FnOnce(&Self) -> T,
     {
-        f(&ManuallyDrop::new(&Self::unerase(*this)))
+        f(&ManuallyDrop::new(Self::unerase(*this)))
     }
 
     /// Run a closure on a mutable borrow of the real pointer.  Unlike the `Thin<T>` wrapper

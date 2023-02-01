@@ -34,7 +34,7 @@ fn thinning() {
 }
 
 #[test]
-fn withfn() {
+fn with_fn() {
     let boxed: Box<Big> = Default::default();
 
     let erased: ErasedPtr = ErasablePtr::erase(boxed);
@@ -44,6 +44,9 @@ fn withfn() {
             assert_eq!(*bigbox, Default::default());
         })
     }
+
+    // drop it, otherwise we would leak memory here
+    unsafe { <Box<Big> as ErasablePtr>::unerase(erased) };
 }
 
 #[test]
