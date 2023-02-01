@@ -61,4 +61,29 @@ fn with_mut_fn() {
             assert_ne!(*bigbox, Default::default());
         })
     }
+
+    // drop it, otherwise we would leak memory here
+    unsafe { <Box<Big> as ErasablePtr>::unerase(erased) };
+}
+
+#[test]
+fn with_mut_fn_replacethis() {
+    let boxed: Box<Big> = Default::default();
+
+    let mut erased: ErasedPtr = ErasablePtr::erase(boxed);
+    let e1 = erased.as_ptr() as usize;
+    unsafe {
+        <Box<Big> as ErasablePtr>::with_mut(&mut erased, |bigbox| {
+            let mut newboxed: Box<Big> = Default::default();
+            newboxed.0[0] = 123456;
+            *bigbox = newboxed;
+            assert_ne!(*bigbox, Default::default());
+        })
+    }
+
+    let e2 = erased.as_ptr() as usize;
+    assert_ne!(e1, e2);
+
+    // drop it, otherwise we would leak memory here
+    unsafe { <Box<Big> as ErasablePtr>::unerase(erased) };
 }

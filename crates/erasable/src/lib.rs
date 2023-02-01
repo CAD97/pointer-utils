@@ -232,7 +232,12 @@ pub unsafe trait ErasablePtr {
         Self: Sized,
         F: FnOnce(&mut Self) -> T,
     {
-        f(&mut ManuallyDrop::new(&mut Self::unerase(*this)))
+        // SAFETY: guard is required to write potentially changed pointer value, even on unwind
+        let mut that = scopeguard::guard(ManuallyDrop::new(Self::unerase(*this)), |unerased| {
+            ptr::write(this, ErasablePtr::erase(ManuallyDrop::into_inner(unerased)));
+        });
+
+        f(&mut that)
     }
 }
 
