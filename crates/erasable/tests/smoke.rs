@@ -71,7 +71,7 @@ fn with_mut_fn_replacethis() {
     let boxed: Box<Big> = Default::default();
 
     let mut erased: ErasedPtr = ErasablePtr::erase(boxed);
-    let e1 = erased.as_ptr() as usize;
+    let e1 = erased.as_ptr();
     unsafe {
         <Box<Big> as ErasablePtr>::with_mut(&mut erased, |bigbox| {
             let mut newboxed: Box<Big> = Default::default();
@@ -81,7 +81,7 @@ fn with_mut_fn_replacethis() {
         })
     }
 
-    let e2 = erased.as_ptr() as usize;
+    let e2 = erased.as_ptr();
     assert_ne!(e1, e2);
 
     // drop it, otherwise we would leak memory here
