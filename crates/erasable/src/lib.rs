@@ -47,7 +47,73 @@ use core::{
 /// The current implementation uses a `struct Erased` with size 0 and align 1.
 /// If you want to offset the pointer, make sure to cast to a `u8` or other known type pointer first.
 /// When `Erased` becomes an extern type, it will properly have unknown size and align.
-pub type ErasedPtr = ptr::NonNull<Erased>;
+#[derive(Debug, Copy, Clone, PartialEq)]
+#[repr(transparent)]
+pub struct ErasedPtr(ptr::NonNull<Erased>);
+
+impl ErasedPtr {
+    /// Gets the raw pointer as '*const ()' unit type. This keeps the internal representation
+    /// hidden and is not very useful but for diagnostics like logging memory addresses and
+    /// comparing pointers for partial equality.
+    pub fn as_unit_ptr(&self) -> *const () {
+        self.0.as_ptr() as *const _
+    }
+
+    /// Run a closure on a borrow of the real pointer.  Unlike the `Thin<T>` wrapper this does
+    /// not carry the original type around. Thus it is required to specify the original impl
+    /// type as closure parameter.
+    ///
+    /// ```
+    /// # use {erasable::*, std::rc::Rc};
+    /// let rc: Rc<i32> = Rc::new(123);
+    ///
+    /// let erased: ErasedPtr = ErasablePtr::erase(rc);
+    ///
+    /// let cloned = unsafe {
+    ///     // must specify a reference to the original type here
+    ///     erased.with(|rc: &Rc<i32>| rc.clone())
+    /// };
+    ///
+    /// assert_eq!(*cloned, 123);
+    /// # unsafe {<Rc<i32> as ErasablePtr>::unerase(erased)}; // drop it
+    /// ```
+    ///
+    /// # Safety
+    ///
+    ///  * The erased pointer must have been created by `erase`.
+    ///  * The specified impl type must be the original type.
+    pub unsafe fn with<E, F, T>(&self, f: F) -> T
+    where
+        E: ErasablePtr,
+        F: FnOnce(&E) -> T,
+    {
+        f(&ManuallyDrop::new(<E as ErasablePtr>::unerase(*self)))
+    }
+
+    /// Run a closure on a mutable borrow of the real pointer.  Unlike the `Thin<T>` wrapper
+    /// this does not carry the original type around. Thus it is required to specify the
+    /// original impl type as closure parameter.
+    ///
+    /// # Safety
+    ///
+    ///  * The erased pointer must have been created by `erase`.
+    ///  * The specified impl type must be the original type.
+    pub unsafe fn with_mut<E, F, T>(&mut self, f: F) -> T
+    where
+        E: ErasablePtr,
+        F: FnOnce(&mut E) -> T,
+    {
+        // SAFETY: guard is required to write potentially changed pointer value, even on unwind
+        let mut this = scopeguard::guard(
+            ManuallyDrop::new(<E as ErasablePtr>::unerase(*self)),
+            |unerased| {
+                ptr::write(self, ErasablePtr::erase(ManuallyDrop::into_inner(unerased)));
+            },
+        );
+
+        f(&mut this)
+    }
+}
 
 #[cfg(not(has_extern_type))]
 pub(crate) use priv_in_pub::Erased;
@@ -185,60 +251,6 @@ pub unsafe trait ErasablePtr {
     ///
     /// The erased pointer must have been created by `erase`.
     unsafe fn unerase(this: ErasedPtr) -> Self;
-
-    /// Run a closure on a borrow of the real pointer.  Unlike the `Thin<T>` wrapper this does
-    /// not carry the original type around. Thus it is required to specify the original impl
-    /// type when calling this function.
-    ///
-    /// ```
-    /// # use {erasable::*, std::rc::Rc};
-    /// let rc: Rc<i32> = Rc::new(123);
-    ///
-    /// let erased: ErasedPtr = ErasablePtr::erase(rc);
-    ///
-    /// let cloned = unsafe {
-    ///     <Rc<i32> as ErasablePtr>::with(&erased, |rc| rc.clone())
-    /// };
-    ///
-    /// assert_eq!(*cloned, 123);
-    /// # unsafe {<Rc<i32> as ErasablePtr>::unerase(erased)}; // drop it
-    /// ```
-    ///
-    /// The main purpose of this function is to be able implement recursive types that would
-    /// be otherwise not representable in rust.
-    ///
-    /// # Safety
-    ///
-    ///  * The erased pointer must have been created by `erase`.
-    ///  * The specified impl type must be the original type.
-    unsafe fn with<F, T>(this: &ErasedPtr, f: F) -> T
-    where
-        Self: Sized,
-        F: FnOnce(&Self) -> T,
-    {
-        f(&ManuallyDrop::new(Self::unerase(*this)))
-    }
-
-    /// Run a closure on a mutable borrow of the real pointer.  Unlike the `Thin<T>` wrapper
-    /// this does not carry the original type around. Thus it is required to specify the
-    /// original impl type when calling this function.
-    ///
-    /// # Safety
-    ///
-    ///  * The erased pointer must have been created by `erase`.
-    ///  * The specified impl type must be the original type.
-    unsafe fn with_mut<F, T>(this: &mut ErasedPtr, f: F) -> T
-    where
-        Self: Sized,
-        F: FnOnce(&mut Self) -> T,
-    {
-        // SAFETY: guard is required to write potentially changed pointer value, even on unwind
-        let mut that = scopeguard::guard(ManuallyDrop::new(Self::unerase(*this)), |unerased| {
-            ptr::write(this, ErasablePtr::erase(ManuallyDrop::into_inner(unerased)));
-        });
-
-        f(&mut that)
-    }
 }
 
 /// A pointee type that supports type-erased pointers (thin pointers).
@@ -327,7 +339,7 @@ pub unsafe trait Erasable {
 /// Erase a pointer.
 #[inline(always)]
 pub fn erase<T: ?Sized>(ptr: ptr::NonNull<T>) -> ErasedPtr {
-    unsafe { ptr::NonNull::new_unchecked(ptr.as_ptr() as *mut Erased) }
+    unsafe { ErasedPtr(ptr::NonNull::new_unchecked(ptr.as_ptr() as *mut Erased)) }
 }
 
 /// Wrapper struct to create thin pointer types.
@@ -670,7 +682,7 @@ where
 unsafe impl<T: Sized> Erasable for T {
     unsafe fn unerase(this: ErasedPtr) -> ptr::NonNull<T> {
         // SAFETY: must not read the pointer for the safety of the impl directly below.
-        this.cast()
+        this.0.cast()
     }
 
     const ACK_1_1_0: bool = true;

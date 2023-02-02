@@ -13,7 +13,7 @@ fn erasing() {
     let boxed: Box<Big> = Box::new(Big::default());
     let ptr = &*boxed as *const _ as usize;
     let erased: ErasedPtr = ErasablePtr::erase(boxed);
-    assert_eq!(erased.as_ptr() as usize, ptr);
+    assert_eq!(erased.as_unit_ptr() as usize, ptr);
     let boxed: Box<Big> = unsafe { ErasablePtr::unerase(erased) };
     assert_eq!(&*boxed as *const _ as usize, ptr);
 }
@@ -40,7 +40,17 @@ fn with_fn() {
     let erased: ErasedPtr = ErasablePtr::erase(boxed);
 
     unsafe {
-        <Box<Big> as ErasablePtr>::with(&erased, |bigbox| {
+        // clippy errs here:
+        // warning: you seem to be trying to use `&Box<T>`. Consider using just `&T`
+        //   --> crates/erasable/tests/smoke.rs:45:30
+        //    |
+        // 45 |         erased.with(|bigbox: &Box<Big>| {
+        //    |                              ^^^^^^^^^ help: try: `&Big`
+        //
+        // We really need to borrow a &Box<Big> in this case because that what we constructed
+        // the ErasedPtr from.
+        #[allow(clippy::borrowed_box)]
+        erased.with(|bigbox: &Box<Big>| {
             assert_eq!(*bigbox, Default::default());
         })
     }
@@ -56,7 +66,7 @@ fn with_mut_fn() {
     let mut erased: ErasedPtr = ErasablePtr::erase(boxed);
 
     unsafe {
-        <Box<Big> as ErasablePtr>::with_mut(&mut erased, |bigbox| {
+        erased.with_mut(|bigbox: &mut Box<Big>| {
             bigbox.0[0] = 123456;
             assert_ne!(*bigbox, Default::default());
         })
@@ -71,9 +81,10 @@ fn with_mut_fn_replacethis() {
     let boxed: Box<Big> = Default::default();
 
     let mut erased: ErasedPtr = ErasablePtr::erase(boxed);
-    let e1 = erased.as_ptr();
+    let e1 = erased.as_unit_ptr();
+
     unsafe {
-        <Box<Big> as ErasablePtr>::with_mut(&mut erased, |bigbox| {
+        erased.with_mut(|bigbox: &mut Box<Big>| {
             let mut newboxed: Box<Big> = Default::default();
             newboxed.0[0] = 123456;
             *bigbox = newboxed;
@@ -81,7 +92,7 @@ fn with_mut_fn_replacethis() {
         })
     }
 
-    let e2 = erased.as_ptr();
+    let e2 = erased.as_unit_ptr();
     assert_ne!(e1, e2);
 
     // drop it, otherwise we would leak memory here
