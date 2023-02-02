@@ -185,6 +185,60 @@ pub unsafe trait ErasablePtr {
     ///
     /// The erased pointer must have been created by `erase`.
     unsafe fn unerase(this: ErasedPtr) -> Self;
+
+    /// Run a closure on a borrow of the real pointer.  Unlike the `Thin<T>` wrapper this does
+    /// not carry the original type around. Thus it is required to specify the original impl
+    /// type when calling this function.
+    ///
+    /// ```
+    /// # use {erasable::*, std::rc::Rc};
+    /// let rc: Rc<i32> = Rc::new(123);
+    ///
+    /// let erased: ErasedPtr = ErasablePtr::erase(rc);
+    ///
+    /// let cloned = unsafe {
+    ///     <Rc<i32> as ErasablePtr>::with(&erased, |rc| rc.clone())
+    /// };
+    ///
+    /// assert_eq!(*cloned, 123);
+    /// # unsafe {<Rc<i32> as ErasablePtr>::unerase(erased)}; // drop it
+    /// ```
+    ///
+    /// The main purpose of this function is to be able implement recursive types that would
+    /// be otherwise not representable in rust.
+    ///
+    /// # Safety
+    ///
+    ///  * The erased pointer must have been created by `erase`.
+    ///  * The specified impl type must be the original type.
+    unsafe fn with<F, T>(this: &ErasedPtr, f: F) -> T
+    where
+        Self: Sized,
+        F: FnOnce(&Self) -> T,
+    {
+        f(&ManuallyDrop::new(Self::unerase(*this)))
+    }
+
+    /// Run a closure on a mutable borrow of the real pointer.  Unlike the `Thin<T>` wrapper
+    /// this does not carry the original type around. Thus it is required to specify the
+    /// original impl type when calling this function.
+    ///
+    /// # Safety
+    ///
+    ///  * The erased pointer must have been created by `erase`.
+    ///  * The specified impl type must be the original type.
+    unsafe fn with_mut<F, T>(this: &mut ErasedPtr, f: F) -> T
+    where
+        Self: Sized,
+        F: FnOnce(&mut Self) -> T,
+    {
+        // SAFETY: guard is required to write potentially changed pointer value, even on unwind
+        let mut that = scopeguard::guard(ManuallyDrop::new(Self::unerase(*this)), |unerased| {
+            ptr::write(this, ErasablePtr::erase(ManuallyDrop::into_inner(unerased)));
+        });
+
+        f(&mut that)
+    }
 }
 
 /// A pointee type that supports type-erased pointers (thin pointers).

@@ -32,3 +32,58 @@ fn thinning() {
     Thin::with_mut(&mut thin, |thin| *thin = Default::default());
     let boxed = Thin::into_inner(thin);
 }
+
+#[test]
+fn with_fn() {
+    let boxed: Box<Big> = Default::default();
+
+    let erased: ErasedPtr = ErasablePtr::erase(boxed);
+
+    unsafe {
+        <Box<Big> as ErasablePtr>::with(&erased, |bigbox| {
+            assert_eq!(*bigbox, Default::default());
+        })
+    }
+
+    // drop it, otherwise we would leak memory here
+    unsafe { <Box<Big> as ErasablePtr>::unerase(erased) };
+}
+
+#[test]
+fn with_mut_fn() {
+    let boxed: Box<Big> = Default::default();
+
+    let mut erased: ErasedPtr = ErasablePtr::erase(boxed);
+
+    unsafe {
+        <Box<Big> as ErasablePtr>::with_mut(&mut erased, |bigbox| {
+            bigbox.0[0] = 123456;
+            assert_ne!(*bigbox, Default::default());
+        })
+    }
+
+    // drop it, otherwise we would leak memory here
+    unsafe { <Box<Big> as ErasablePtr>::unerase(erased) };
+}
+
+#[test]
+fn with_mut_fn_replacethis() {
+    let boxed: Box<Big> = Default::default();
+
+    let mut erased: ErasedPtr = ErasablePtr::erase(boxed);
+    let e1 = erased.as_ptr();
+    unsafe {
+        <Box<Big> as ErasablePtr>::with_mut(&mut erased, |bigbox| {
+            let mut newboxed: Box<Big> = Default::default();
+            newboxed.0[0] = 123456;
+            *bigbox = newboxed;
+            assert_ne!(*bigbox, Default::default());
+        })
+    }
+
+    let e2 = erased.as_ptr();
+    assert_ne!(e1, e2);
+
+    // drop it, otherwise we would leak memory here
+    unsafe { <Box<Big> as ErasablePtr>::unerase(erased) };
+}
