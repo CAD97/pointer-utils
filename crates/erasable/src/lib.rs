@@ -380,10 +380,6 @@ impl<P: ErasablePtr> From<P> for Thin<P> {
 }
 
 impl<P: ErasablePtr> Thin<P> {
-    fn inner(this: &Self) -> ManuallyDrop<P> {
-        unsafe { ManuallyDrop::new(P::unerase(this.ptr)) }
-    }
-
     // noinspection RsSelfConvention
     // `From` can't be impl'd because it's an impl on an uncovered type
     // `Into` can't be impl'd because it conflicts with the reflexive impl
@@ -397,7 +393,8 @@ impl<P: ErasablePtr> Thin<P> {
     where
         F: FnOnce(&P) -> T,
     {
-        f(&Thin::inner(this))
+        // SAFETY: The type &P is always correct here
+        unsafe { this.ptr.with(f) }
     }
 
     /// Run a closure with a mutable borrow of the real pointer.
@@ -405,13 +402,8 @@ impl<P: ErasablePtr> Thin<P> {
     where
         F: FnOnce(&mut P) -> T,
     {
-        // SAFETY: guard is required to write potentially changed pointer value, even on unwind
-        let mut this = unsafe {
-            scopeguard::guard(P::unerase(this.ptr), |unerased| {
-                ptr::write(this, Thin::from(unerased))
-            })
-        };
-        f(&mut this)
+        // SAFETY: The type &P is always correct here
+        unsafe { this.ptr.with_mut(f) }
     }
 
     /// Check two thin pointers for pointer equivalence.
