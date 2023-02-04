@@ -55,6 +55,7 @@ impl ErasedPtr {
     /// Gets the raw pointer as '*const ()' unit type. This keeps the internal representation
     /// hidden and is not very useful but for diagnostics like logging memory addresses and
     /// comparing pointers for partial equality.
+    #[inline(always)]
     pub fn as_unit_ptr(&self) -> *const () {
         self.0.as_ptr() as *const _
     }
@@ -82,6 +83,7 @@ impl ErasedPtr {
     ///
     ///  * The erased pointer must have been created by `erase`.
     ///  * The specified impl type must be the original type.
+    #[inline(always)]
     pub unsafe fn with<E, F, T>(&self, f: F) -> T
     where
         E: ErasablePtr,
