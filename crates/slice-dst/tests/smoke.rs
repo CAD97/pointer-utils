@@ -39,6 +39,68 @@ fn actual_zst() {
     }
 }
 
+#[test]
+fn str_eq_cmp() {
+    let l: Box<StrWithHeader<char>> = StrWithHeader::new('*', "AB");
+    let r: Box<StrWithHeader<char>> = StrWithHeader::new('*', "ab");
+
+    assert_eq!(l, l);
+    assert_eq!(r, r);
+
+    assert_ne!(l, r);
+    assert_ne!(r, l);
+
+    assert!(l <= l);
+    assert!(l >= l);
+    assert!(!(l < l));
+    assert!(!(l > l));
+
+    assert!(r <= r);
+    assert!(r >= r);
+    assert!(!(r < r));
+    assert!(!(r > r));
+
+    assert!(l < r);
+    assert!(r > l);
+}
+
+#[test]
+fn slice_eq_cmp() {
+    let l: Box<SliceWithHeader<i32, i32>> = SliceWithHeader::from_slice(1, &[2, 3]);
+    let r: Box<SliceWithHeader<i32, i32>> = SliceWithHeader::from_slice(10, &[20, 30]);
+
+    assert_eq!(l, l);
+    assert_eq!(r, r);
+
+    assert_ne!(l, r);
+    assert_ne!(r, l);
+
+    assert!(l <= l);
+    assert!(l >= l);
+    assert!(!(l < l));
+    assert!(!(l > l));
+
+    assert!(r <= r);
+    assert!(r >= r);
+    assert!(!(r < r));
+    assert!(!(r > r));
+
+    assert!(l < r);
+    assert!(r > l);
+}
+
+const fn is_partial_ord<T: ?Sized + PartialOrd>() {}
+const fn is_ord<T: ?Sized + Ord>() {}
+
+// compile-time check that PartialOrd/Ord is correctly derived
+const _: () = is_partial_ord::<SliceWithHeader<f64, f64>>();
+const _: () = is_partial_ord::<SliceWithHeader<f64, u64>>();
+const _: () = is_partial_ord::<SliceWithHeader<u64, f64>>();
+const _: () = is_ord::<SliceWithHeader<u64, u64>>();
+
+const _: () = is_partial_ord::<StrWithHeader<f64>>();
+const _: () = is_ord::<StrWithHeader<u64>>();
+
 type Data = usize;
 #[repr(transparent)]
 #[derive(Debug, Clone)]

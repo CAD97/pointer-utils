@@ -1,7 +1,7 @@
 use super::*;
 
 #[repr(C)]
-#[derive(Debug, Eq, PartialEq, Hash)]
+#[derive(Debug, Eq, PartialEq, PartialOrd, Ord, Hash)]
 /// A custom slice-based DST.
 ///
 /// The length is stored as a `usize` at offset 0.
@@ -175,7 +175,7 @@ unsafe impl<Header, Item> Erasable for SliceWithHeader<Header, Item> {
 }
 
 #[repr(C)]
-#[derive(Debug, Eq, PartialEq, Hash)]
+#[derive(Debug, Eq, PartialEq, PartialOrd, Ord, Hash)]
 /// A custom str-based DST.
 ///
 /// The length is stored as a `usize` at offset 0.
