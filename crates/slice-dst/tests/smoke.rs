@@ -41,52 +41,78 @@ fn actual_zst() {
 
 #[test]
 fn str_eq_cmp() {
-    let l: Box<StrWithHeader<char>> = StrWithHeader::new('*', "AB");
-    let r: Box<StrWithHeader<char>> = StrWithHeader::new('*', "ab");
+    [
+        [("*", "AB"), ("*", "ab")],
+        [("*", "AB"), ("*", "a")],
+        [("*", "A"), ("*", "ab")],
+        [("A", "*"), ("a", "*")],
+        [("a", "*"), ("A", "*")],
+        [("AB", "*"), ("a", "*")],
+        [("A", "*"), ("ab", "*")],
+    ]
+    .iter()
+    .for_each(|[lt @ (lh, ls), rt @ (rh, rs)]| {
+        let l: Box<StrWithHeader<&str>> = StrWithHeader::new(*lh, ls);
+        let r: Box<StrWithHeader<&str>> = StrWithHeader::new(*rh, rs);
 
-    assert_eq!(l, l);
-    assert_eq!(r, r);
+        assert_eq!(l, l);
+        assert_eq!(r, r);
 
-    assert_ne!(l, r);
-    assert_ne!(r, l);
+        assert_ne!(l, r);
+        assert_ne!(r, l);
 
-    assert!(l <= l);
-    assert!(l >= l);
-    assert!(!(l < l));
-    assert!(!(l > l));
+        assert_eq!(l <= l, lt <= lt);
+        assert_eq!(l >= l, lt >= lt);
 
-    assert!(r <= r);
-    assert!(r >= r);
-    assert!(!(r < r));
-    assert!(!(r > r));
+        assert_eq!(l < l, lt < lt);
+        assert_eq!(l > l, lt > lt);
 
-    assert!(l < r);
-    assert!(r > l);
+        assert_eq!(r <= r, rt <= rt);
+        assert_eq!(r >= r, rt >= rt);
+
+        assert_eq!(r < r, rt < rt);
+        assert_eq!(r > r, rt > rt);
+
+        assert_eq!(l < r, lt < rt);
+        assert_eq!(r > l, rt > lt);
+    })
 }
 
 #[test]
 fn slice_eq_cmp() {
-    let l: Box<SliceWithHeader<i32, i32>> = SliceWithHeader::from_slice(1, &[2, 3]);
-    let r: Box<SliceWithHeader<i32, i32>> = SliceWithHeader::from_slice(10, &[20, 30]);
+    [
+        [(0, &[0, 0][..]), (1, &[0, 0][..])],
+        [(1, &[0, 0][..]), (0, &[0, 0][..])],
+        [(0, &[0][..]), (0, &[0, 0][..])],
+        [(0, &[0, 0][..]), (0, &[0][..])],
+        [(0, &[1, 2][..]), (0, &[10, 20][..])],
+    ]
+    .iter()
+    .for_each(|[lt @ (lh, ls), rt @ (rh, rs)]| {
+        let l: Box<SliceWithHeader<i32, i32>> = SliceWithHeader::from_slice(*lh, ls);
+        let r: Box<SliceWithHeader<i32, i32>> = SliceWithHeader::from_slice(*rh, rs);
 
-    assert_eq!(l, l);
-    assert_eq!(r, r);
+        assert_eq!(l, l);
+        assert_eq!(r, r);
 
-    assert_ne!(l, r);
-    assert_ne!(r, l);
+        assert_ne!(l, r);
+        assert_ne!(r, l);
 
-    assert!(l <= l);
-    assert!(l >= l);
-    assert!(!(l < l));
-    assert!(!(l > l));
+        assert_eq!(l <= l, lt <= lt);
+        assert_eq!(l >= l, lt >= lt);
 
-    assert!(r <= r);
-    assert!(r >= r);
-    assert!(!(r < r));
-    assert!(!(r > r));
+        assert_eq!(l < l, lt < lt);
+        assert_eq!(l > l, lt > lt);
 
-    assert!(l < r);
-    assert!(r > l);
+        assert_eq!(r <= r, rt <= rt);
+        assert_eq!(r >= r, rt >= rt);
+
+        assert_eq!(r < r, rt < rt);
+        assert_eq!(r > r, rt > rt);
+
+        assert_eq!(l < r, lt < rt);
+        assert_eq!(r > l, rt > lt);
+    })
 }
 
 const fn is_partial_ord<T: ?Sized + PartialOrd>() {}
