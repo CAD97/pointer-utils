@@ -61,20 +61,20 @@ fn str_eq_cmp() {
         assert_ne!(l, r);
         assert_ne!(r, l);
 
-        assert_eq!(l <= l, lt <= lt);
-        assert_eq!(l >= l, lt >= lt);
+        assert_eq!(l <= l, lt <= lt, "{lt:?} <= {lt:?}");
+        assert_eq!(l >= l, lt >= lt, "{lt:?} >= {lt:?}");
 
-        assert_eq!(l < l, lt < lt);
-        assert_eq!(l > l, lt > lt);
+        assert_eq!(l < l, lt < lt, "{lt:?} < {lt:?}");
+        assert_eq!(l > l, lt > lt, "{lt:?} > {lt:?}");
 
-        assert_eq!(r <= r, rt <= rt);
-        assert_eq!(r >= r, rt >= rt);
+        assert_eq!(r <= r, rt <= rt, "{rt:?} <= {rt:?}");
+        assert_eq!(r >= r, rt >= rt, "{rt:?} >= {rt:?}");
 
-        assert_eq!(r < r, rt < rt);
-        assert_eq!(r > r, rt > rt);
+        assert_eq!(r < r, rt < rt, "{rt:?} < {rt:?}");
+        assert_eq!(r > r, rt > rt, "{rt:?} > {rt:?}");
 
-        assert_eq!(l < r, lt < rt);
-        assert_eq!(r > l, rt > lt);
+        assert_eq!(l < r, lt < rt, "{lt:?} < {rt:?}");
+        assert_eq!(r > l, rt > lt, "{rt:?} > {lt:?}");
     })
 }
 
@@ -98,20 +98,57 @@ fn slice_eq_cmp() {
         assert_ne!(l, r);
         assert_ne!(r, l);
 
-        assert_eq!(l <= l, lt <= lt);
-        assert_eq!(l >= l, lt >= lt);
+        assert_eq!(l <= l, lt <= lt, "{lt:?} <= {lt:?}");
+        assert_eq!(l >= l, lt >= lt, "{lt:?} >= {lt:?}");
 
-        assert_eq!(l < l, lt < lt);
-        assert_eq!(l > l, lt > lt);
+        assert_eq!(l < l, lt < lt, "{lt:?} < {lt:?}");
+        assert_eq!(l > l, lt > lt, "{lt:?} > {lt:?}");
 
-        assert_eq!(r <= r, rt <= rt);
-        assert_eq!(r >= r, rt >= rt);
+        assert_eq!(r <= r, rt <= rt, "{rt:?} <= {rt:?}");
+        assert_eq!(r >= r, rt >= rt, "{rt:?} >= {rt:?}");
 
-        assert_eq!(r < r, rt < rt);
-        assert_eq!(r > r, rt > rt);
+        assert_eq!(r < r, rt < rt, "{rt:?} < {rt:?}");
+        assert_eq!(r > r, rt > rt, "{rt:?} > {rt:?}");
 
-        assert_eq!(l < r, lt < rt);
-        assert_eq!(r > l, rt > lt);
+        assert_eq!(l < r, lt < rt, "{lt:?} < {rt:?}");
+        assert_eq!(r > l, rt > lt, "{rt:?} > {lt:?}");
+    })
+}
+
+#[test]
+fn slice_partial_eq_cmp() {
+    [
+        [(0.0, &[0.0, 0.0][..]), (1.0, &[0.0, 0.0][..])],
+        [(1.0, &[0.0, 0.0][..]), (0.0, &[0.0, 0.0][..])],
+        [(0.0, &[0.0][..]), (0.0, &[0.0, 0.0][..])],
+        [(0.0, &[0.0, 0.0][..]), (0.0, &[0.0][..])],
+        [(0.0, &[1.0, 2.0][..]), (0.0, &[10.0, 20.0][..])],
+    ]
+    .iter()
+    .for_each(|[lt @ (lh, ls), rt @ (rh, rs)]| {
+        let l: Box<SliceWithHeader<f32, f32>> = SliceWithHeader::from_slice(*lh, ls);
+        let r: Box<SliceWithHeader<f32, f32>> = SliceWithHeader::from_slice(*rh, rs);
+
+        assert_eq!(l, l);
+        assert_eq!(r, r);
+
+        assert_ne!(l, r);
+        assert_ne!(r, l);
+
+        assert_eq!(l <= l, lt <= lt, "{lt:?} <= {lt:?}");
+        assert_eq!(l >= l, lt >= lt, "{lt:?} >= {lt:?}");
+
+        assert_eq!(l < l, lt < lt, "{lt:?} < {lt:?}");
+        assert_eq!(l > l, lt > lt, "{lt:?} > {lt:?}");
+
+        assert_eq!(r <= r, rt <= rt, "{rt:?} <= {rt:?}");
+        assert_eq!(r >= r, rt >= rt, "{rt:?} >= {rt:?}");
+
+        assert_eq!(r < r, rt < rt, "{rt:?} < {rt:?}");
+        assert_eq!(r > r, rt > rt, "{rt:?} > {rt:?}");
+
+        assert_eq!(l < r, lt < rt, "{lt:?} < {rt:?}");
+        assert_eq!(r > l, rt > lt, "{rt:?} > {lt:?}");
     })
 }
 
