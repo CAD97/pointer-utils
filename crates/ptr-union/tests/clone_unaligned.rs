@@ -56,7 +56,7 @@ type Union = Union8<
 
 #[test]
 #[should_panic = "but the cloned pointer wasn't sufficiently aligned"]
-fn test() {
+fn test_clone_unaligned() {
     let bx = MyBox::new();
     // this can't fail since the first `MyBox` is created at address 8, which is aligned to 8 bytes
     let x = Union::new_a(bx).unwrap();
