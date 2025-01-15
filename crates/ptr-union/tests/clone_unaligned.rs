@@ -29,7 +29,7 @@ unsafe impl erasable::ErasablePtr for MyBox {
 static OFFSET: AtomicUsize = AtomicUsize::new(8);
 
 impl MyBox {
-    pub fn new() -> Self {
+    fn new() -> Self {
         let offset = OFFSET.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
         MyBox {
             ptr: NonNull::new(offset as _).unwrap(),
@@ -55,6 +55,7 @@ type Union = Union8<
 >;
 
 #[test]
+#[allow(clippy::redundant_clone)]
 #[should_panic = "but the cloned pointer wasn't sufficiently aligned"]
 fn test_clone_unaligned() {
     let bx = MyBox::new();
