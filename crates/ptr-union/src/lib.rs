@@ -558,9 +558,14 @@ macro_rules! impl_union {
         {
             paste::paste! {
                 fn clone(&self) -> Self {
-                    let builder = unsafe { <$Builder<$($A,)*>>::new_unchecked() };
+                    #[cold]
+                    #[inline(never)]
+                    fn clone_error<A>() -> ! {
+                        panic!("Tried to clone {} in a {}, but the cloned pointer wasn't sufficiently aligned", core::any::type_name::<A>(), stringify!($Union))
+                    }
+
                     None
-                        $(.or_else(|| self.[<clone_ $a>]().map(|this| builder.$a(this))))*
+                        $(.or_else(|| self.[<clone_ $a>]().map(|this| Self::[<new_ $a>](this).unwrap_or_else(|_| clone_error::<$A>()))))*
                         .unwrap_or_else(|| unsafe { unreachable_unchecked() })
                 }
             }
