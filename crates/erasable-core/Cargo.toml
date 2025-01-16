@@ -1,0 +1,12 @@
+[package]
+name = "erasable-core"
+version = "1.0.0"
+edition = "2021"
+
+[badges]
+maintenance = { status = "passively-maintained" }
+
+[features]
+default = ["alloc", "std"]
+std = ["alloc"]
+alloc = []
