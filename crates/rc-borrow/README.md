@@ -39,8 +39,7 @@ We provide support for both `Arc` and `Rc`.
 
 ## Minimum Supported Rust Version
 
-We require a minimum Rust version of 1.41.0.
-This is for an adjustment of local trait impl checking.
+We require a minimum Rust version of 1.80.0.
 
 Minimum version support is only guaranteed with minimal version resolution
 (`-Z minimal-versions`/`--minimal-versions`) due to how dependencies are handled.

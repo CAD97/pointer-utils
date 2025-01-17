@@ -2,6 +2,7 @@
 name = "rc-box"
 version = "1.3.0"
 edition = "2021"
+rust-version = "1.80"
 
 authors = ["Christopher Durham (cad97) <cad97@cad97.com>"]
 description = "Known unique versions of Rc and Arc."
