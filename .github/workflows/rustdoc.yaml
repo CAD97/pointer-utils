@@ -4,33 +4,25 @@ on:
     branches:
       - master
 
+permissions:
+  contents: write
+
 jobs:
   cargo-doc:
     runs-on: ubuntu-latest
-    env:
-      CARGO_INCREMENTAL: 0
-
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Install beta toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: beta
-          profile: minimal
-          override: true
+        uses: dtolnay/rust-toolchain@beta
 
       - name: Build docs
-        uses: actions-rs/cargo@v1
-        with:
-          command: doc
-          args: --no-deps
+        run: cargo doc --no-deps
 
       - name: Deploy docs
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
           github_token: ${{ github.token }}
           publish_dir: ./target/doc
           force_orphan: true
