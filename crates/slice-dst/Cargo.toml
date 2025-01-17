@@ -1,14 +1,13 @@
 [package]
 name = "slice-dst"
-version = "1.5.1"
-edition = "2018"
+version = "1.6.0"
+edition = "2021"
 
-authors = ["Christopher Durham (cad97) <cad97@cad97.com>"]
 description = "Slice-based custom DSTs"
 repository = "https://github.com/CAD97/pointer-utils/tree/master/crates/slice-dst"
 readme = "README.md"
-keywords = ["thin","slice","type","erasure","dst"]
-categories = ["data-structures","no-std","rust-patterns"]
+keywords = ["thin", "slice", "type", "erasure", "dst"]
+categories = ["data-structures", "no-std", "rust-patterns"]
 license = "MIT OR Apache-2.0"
 
 [package.metadata.workspaces]

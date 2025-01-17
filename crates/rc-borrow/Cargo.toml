@@ -3,12 +3,11 @@ name = "rc-borrow"
 version = "1.4.0"
 edition = "2018"
 
-authors = ["Christopher Durham (cad97) <cad97@cad97.com>"]
 description = "Borrowed forms of Rc and Arc."
 repository = "https://github.com/CAD97/pointer-utils/tree/master/crates/rc-borrow"
 readme = "README.md"
-keywords = ["rc","arc","borrow","reference"]
-categories = ["data-structures","no-std","rust-patterns"]
+keywords = ["rc", "arc", "borrow", "reference"]
+categories = ["data-structures", "no-std", "rust-patterns"]
 license = "MIT OR Apache-2.0"
 
 [package.metadata.workspaces]

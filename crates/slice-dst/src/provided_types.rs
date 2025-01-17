@@ -29,8 +29,8 @@ impl<Header, Item> SliceWithHeader<Header, Item> {
     fn layout(len: usize) -> (Layout, [usize; 3]) {
         let length_layout = Layout::new::<usize>();
         let header_layout = Layout::new::<Header>();
-        let slice_layout = layout_polyfill::layout_array::<Item>(len).unwrap();
-        layout_polyfill::repr_c_3([length_layout, header_layout, slice_layout]).unwrap()
+        let slice_layout = Layout::array::<Item>(len).unwrap();
+        polyfill::repr_c_3([length_layout, header_layout, slice_layout]).unwrap()
     }
 
     #[allow(clippy::new_ret_no_self)]
@@ -60,7 +60,7 @@ impl<Header, Item> SliceWithHeader<Header, Item> {
         impl<Header, Item> Drop for InProgress<Header, Item> {
             fn drop(&mut self) {
                 unsafe {
-                    ptr::drop_in_place(slice_from_raw_parts(
+                    ptr::drop_in_place(ptr::slice_from_raw_parts_mut(
                         self.raw().add(self.slice_offset).cast::<Item>(),
                         self.written,
                     ));
@@ -72,7 +72,7 @@ impl<Header, Item> SliceWithHeader<Header, Item> {
             fn init(
                 len: usize,
                 header: Header,
-                mut items: impl Iterator<Item = Item> + ExactSizeIterator,
+                mut items: impl ExactSizeIterator<Item = Item>,
             ) -> impl FnOnce(ptr::NonNull<SliceWithHeader<Header, Item>>) {
                 move |ptr| {
                     let mut this = Self::new(len, ptr);
@@ -167,7 +167,8 @@ where
 unsafe impl<Header, Item> Erasable for SliceWithHeader<Header, Item> {
     unsafe fn unerase(this: ErasedPtr) -> ptr::NonNull<Self> {
         let len: usize = ptr::read(this.as_ptr().cast());
-        let raw = ptr::NonNull::new_unchecked(slice_from_raw_parts(this.as_ptr().cast(), len));
+        let raw =
+            ptr::NonNull::new_unchecked(ptr::slice_from_raw_parts_mut(this.as_ptr().cast(), len));
         Self::retype(raw)
     }
 
@@ -203,8 +204,8 @@ impl<Header> StrWithHeader<Header> {
     fn layout(len: usize) -> (Layout, [usize; 3]) {
         let length_layout = Layout::new::<usize>();
         let header_layout = Layout::new::<Header>();
-        let slice_layout = layout_polyfill::layout_array::<u8>(len).unwrap();
-        layout_polyfill::repr_c_3([length_layout, header_layout, slice_layout]).unwrap()
+        let slice_layout = Layout::array::<u8>(len).unwrap();
+        polyfill::repr_c_3([length_layout, header_layout, slice_layout]).unwrap()
     }
 
     #[allow(clippy::new_ret_no_self)]
@@ -240,7 +241,8 @@ where
 unsafe impl<Header> Erasable for StrWithHeader<Header> {
     unsafe fn unerase(this: ErasedPtr) -> ptr::NonNull<Self> {
         let len: usize = ptr::read(this.as_ptr().cast());
-        let raw = ptr::NonNull::new_unchecked(slice_from_raw_parts(this.as_ptr().cast(), len));
+        let raw =
+            ptr::NonNull::new_unchecked(ptr::slice_from_raw_parts_mut(this.as_ptr().cast(), len));
         Self::retype(raw)
     }
 

@@ -1,7 +1,7 @@
 //! These tests don't really assert anything, they just exercise the API.
 //! This is primarily intended to be run under miri as a sanitizer.
 
-#![allow(clippy::borrowed_box, clippy::drop_ref)]
+#![allow(unused, dropping_references, clippy::borrowed_box)]
 
 use ptr_union::{Builder2, Builder4};
 

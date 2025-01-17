@@ -183,6 +183,8 @@ macro_rules! rc_borrow {
                 concat!("\
 Construct a new `", stringify!($RcBorrow), "` from a raw pointer.
 
+# Safety
+
 The raw pointer must have been previously returned by a call to
 `",stringify!($RcBorrow),"<U>::into_raw` or `",stringify!($Rc),"<U>::as_raw`
 where `U` must have the same size and alignment as `T`. This is trivially true

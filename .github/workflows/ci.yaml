@@ -1,92 +1,60 @@
 name: CI
 on:
   pull_request:
-  push: # bors
-    branches:
-      - staging
-      - trying
+  merge_group:
 
 env:
-  CI: 1
-  CARGO_INCREMENTAL: 0
-  CARGO_PROFILE_DEV_DEBUG: false
-  CARGO_PROFILE_RELEASE_DEBUG: false
   RUSTFLAGS: -D warnings -W unreachable-pub
-  MIRIFLAGS: -Zmiri-check-number-validity -Zmiri-symbolic-alignment-check -Zmiri-tag-raw-pointers
+  MIRIFLAGS: -Zmiri-strict-provenance -Zmiri-symbolic-alignment-check
 
 jobs:
   cargo-test:
     name: Tests
-    if: ${{ github.event.pusher.name == 'bors[bot]' }}
     runs-on: ubuntu-latest
     steps:
 
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Install toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: 1.59.0
-          profile: minimal
-          override: true
+        uses: dtolnay/rust-toolchain@1.84
 
       - name: Enable caching
-        uses: Swatinem/rust-cache@v1.3.0
+        uses: Swatinem/rust-cache@v2
 
       - name: Compile
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all --all-targets --examples --no-run
+        run: cargo test --all --all-targets --examples --no-run
 
       - name: Run tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all --all-targets --examples
+        run: cargo test --all --all-targets --examples
 
   cargo-test-msrv:
-    name: Tests (1.41.0)
+    name: Tests (1.80.0)
     runs-on: ubuntu-latest
     steps:
 
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Install arbitrary nightly toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@1.80
         with:
-          toolchain: nightly-2022-01-01
-          profile: minimal
+          toolchain: nightly-2025-01-01
 
       - name: Install msrv toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: 1.41.0
-          profile: minimal
-          override: true
+        uses: dtolnay/rust-toolchain@1.80
 
       - name: Generate minimal-versions lockfile
-        uses: actions-rs/cargo@v1
-        with:
-          command: +nightly-2022-01-01
-          args: -Z minimal-versions generate-lockfile
+        run: cargo +nightly-2025-01-01 -Zminimal-versions generate-lockfile
 
       - name: Enable caching
-        uses: Swatinem/rust-cache@v1.3.0
+        uses: Swatinem/rust-cache@v2
 
       - name: Compile
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --locked --all --all-targets --examples --no-run
+        run: cargo test --locked --all --all-targets --examples --no-run
 
       - name: Run tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --locked --all --all-targets --examples
+        run: cargo test --locked --all --all-targets --examples
 
   cargo-fmt:
     name: Formatting
@@ -94,21 +62,13 @@ jobs:
     steps:
 
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - name: Instal toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: 1.59.0
-          override: true
-          components: rustfmt
+      - name: Install toolchain
+        uses: dtolnay/rust-toolchain@1.84
 
       - name: Check formatting
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
+        run: cargo fmt --all -- --check
 
   cargo-clippy:
     name: Lints
@@ -118,19 +78,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Install beta toolchain
-        uses: actions-rs/toolchain@v1
+      - name: Install toolchain
+        uses: dtolnay/rust-toolchain@1.84
         with:
-          profile: minimal
-          toolchain: 1.59.0
-          override: true
           components: clippy
 
-      - name: Check style
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --all --all-targets
+      - name: Check clippy
+        run: cargo clippy --all --all-targets
 
   cargo-miri:
     name: Miri
@@ -138,27 +92,18 @@ jobs:
     steps:
 
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Install nightly toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@nightly
         with:
-          profile: minimal
-          toolchain: nightly
-          override: true
           components: miri
 
       - name: Enable caching
-        uses: Swatinem/rust-cache@v1.3.0
+        uses: Swatinem/rust-cache@v2
 
       - name: Miri setup
-        uses: actions-rs/cargo@v1
-        with:
-          command: miri
-          args: setup
+        run: cargo miri setup
 
       - name: Miri test
-        uses: actions-rs/cargo@v1
-        with:
-          command: miri
-          args: test --workspace --all-features
+        run: cargo miri test --workspace --all-features
