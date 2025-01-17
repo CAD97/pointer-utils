@@ -720,13 +720,11 @@ macro_rules! impl_erasable {
 }
 
 #[cfg(feature = "alloc")]
-impl_erasable!(for<T>
-    Box<T>,
+impl_erasable!(
+    for<T> Box<T>,
     sync::Arc<T>,
-    #[cfg(has_Weak__into_raw)]
     sync::Weak<T>,
     rc::Rc<T>,
-    #[cfg(has_Weak__into_raw)]
     rc::Weak<T>,
 );
 
@@ -749,11 +747,13 @@ unsafe impl ErasablePtr for ! {
 }
 
 #[inline(always)]
+#[allow(clippy::needless_lifetimes)]
 unsafe fn erase_lt<'a, 'b, T: ?Sized>(this: &'a T) -> &'b T {
     &*(this as *const T)
 }
 
 #[inline(always)]
+#[allow(clippy::needless_lifetimes)]
 unsafe fn erase_lt_mut<'a, 'b, T: ?Sized>(this: &'a mut T) -> &'b mut T {
     &mut *(this as *mut T)
 }

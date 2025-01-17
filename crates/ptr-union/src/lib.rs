@@ -38,12 +38,18 @@ const TAG_N: usize = 0b1101;
 const TAG_O: usize = 0b1110;
 const TAG_P: usize = 0b1111;
 
-// See rust-lang/rust#95228 for why these are necessary.
 fn ptr_addr<T>(this: *mut T) -> usize {
-    // FIXME(strict_provenance_magic): I am magic and should be a compiler intrinsic.
-    this as usize
+    #[cfg(not(has_strict_provenance))]
+    {
+        this as usize
+    }
+    #[cfg(has_strict_provenance)]
+    {
+        this.addr()
+    }
 }
 
+#[cfg(not(has_strict_provenance))]
 fn ptr_with_addr<T>(this: *mut T, addr: usize) -> *mut T {
     // FIXME(strict_provenance_magic): I am magic and should be a compiler intrinsic.
     //
@@ -59,7 +65,14 @@ fn ptr_with_addr<T>(this: *mut T, addr: usize) -> *mut T {
 }
 
 fn ptr_map_addr<T>(this: *mut T, f: impl FnOnce(usize) -> usize) -> *mut T {
-    ptr_with_addr(this, f(ptr_addr(this)))
+    #[cfg(not(has_strict_provenance))]
+    {
+        ptr_with_addr(this, f(ptr_addr(this)))
+    }
+    #[cfg(has_strict_provenance)]
+    {
+        this.map_addr(f)
+    }
 }
 
 fn ptr_tag<T>(this: *mut T, tag: usize) -> *mut T {
@@ -684,6 +697,7 @@ impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> fmt::Debug
     }
 }
 
+#[allow(clippy::needless_lifetimes)]
 unsafe fn erase_lt<'a, 'b, T: ?Sized>(r: &'a T) -> &'b T {
     &*(r as *const T)
 }

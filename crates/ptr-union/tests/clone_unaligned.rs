@@ -12,6 +12,17 @@ struct MyBox {
     ptr: NonNull<u8>,
 }
 
+fn ptr_dangling_at<T>(addr: usize) -> *mut T {
+    #[cfg(not(has_strict_provenance))]
+    {
+        addr as _
+    }
+    #[cfg(has_strict_provenance)]
+    {
+        std::ptr::without_provenance_mut(addr)
+    }
+}
+
 // SAFETY:
 // * MyBox doesn't have any shared mutability
 // * the address of the returned pointer doesn't depend on the address of MyBox
@@ -32,7 +43,7 @@ impl MyBox {
     fn new() -> Self {
         let offset = OFFSET.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
         MyBox {
-            ptr: NonNull::new(offset as _).unwrap(),
+            ptr: NonNull::new(ptr_dangling_at(offset)).unwrap(),
         }
     }
 }

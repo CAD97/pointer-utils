@@ -1,7 +1,7 @@
 //! These tests don't really assert anything, they just exercise the API.
 //! This is primarily intended to be run under miri as a sanitizer.
 
-#![allow(unused, clippy::redundant_clone, clippy::unnecessary_operation)]
+#![allow(unused, clippy::style)]
 
 use erasable::{Erasable, ErasablePtr, ErasedPtr, Thin};
 

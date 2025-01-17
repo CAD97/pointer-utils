@@ -87,7 +87,7 @@
 //! - [Array layout][array-layout] and [slice layout][slice-layout] are defined.
 //! - [`#[repr(C)]`][repr-c-layout] allows us to make compound types with defined layout.
 //! - We can turn an opaque pointer into a slice fat pointer with
-//!   [`ptr::slice_from_raw_parts`][slice_from_raw_parts].
+//!   [`ptr::slice_from_raw_parts`].
 //! - We can cast a slice pointer to a pointer to our compound type
 //!   in order to keep the correct fat pointer metadata.
 //!
@@ -138,10 +138,6 @@
 
 extern crate alloc;
 
-#[cfg(has_ptr_slice_from_raw_parts)]
-use core::ptr::slice_from_raw_parts_mut as slice_from_raw_parts;
-#[cfg(not(has_ptr_slice_from_raw_parts))]
-use core::slice::from_raw_parts_mut as slice_from_raw_parts;
 #[cfg(feature = "erasable")]
 use erasable::{Erasable, ErasedPtr};
 use {
@@ -186,7 +182,7 @@ pub unsafe trait SliceDst {
 
 unsafe impl<T> SliceDst for [T] {
     fn layout_for(len: usize) -> Layout {
-        layout_polyfill::layout_array::<T>(len).unwrap()
+        Layout::array::<T>(len).unwrap()
     }
 
     fn retype(ptr: ptr::NonNull<[()]>) -> ptr::NonNull<Self> {
@@ -224,12 +220,12 @@ where
     unsafe {
         let ptr = if layout.size() == 0 {
             // Do not allocate in the ZST case! CAD97/pointer-utils#23
-            ptr::NonNull::new(layout.align() as *mut ())
+            ptr::NonNull::new(polyfill::ptr_dangling_at(layout.align()))
         } else {
             ptr::NonNull::new(alloc(layout) as *mut ())
         }
         .unwrap_or_else(|| handle_alloc_error(layout));
-        let ptr = ptr::NonNull::new_unchecked(slice_from_raw_parts(ptr.as_ptr(), len));
+        let ptr = ptr::NonNull::new_unchecked(ptr::slice_from_raw_parts_mut(ptr.as_ptr(), len));
         S::retype(ptr)
     }
 }
@@ -383,7 +379,7 @@ unsafe impl<S: ?Sized + SliceDst> TryAllocSliceDst<S> for Arc<S> {
     }
 }
 
-pub(crate) mod layout_polyfill;
+pub(crate) mod polyfill;
 mod provided_types;
 
 pub use provided_types::{SliceWithHeader, StrWithHeader};

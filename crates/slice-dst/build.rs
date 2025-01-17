@@ -1,9 +1,7 @@
 fn main() {
     let cfg = autocfg::new();
-    cfg.emit_expression_cfg(
-        "std::ptr::slice_from_raw_parts_mut::<()>",
-        "has_ptr_slice_from_raw_parts",
-    );
-
+    println!("cargo::rustc-check-cfg=cfg(has_strict_provenance)");
+    cfg.emit_type_cfg("!", "has_never");
+    cfg.emit_expression_cfg("<*const ()>::addr", "has_strict_provenance");
     autocfg::rerun_path("build.rs");
 }

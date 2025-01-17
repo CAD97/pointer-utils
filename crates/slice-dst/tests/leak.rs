@@ -29,10 +29,6 @@ impl Drop for DropTracking<'_> {
 }
 
 #[test]
-#[cfg_attr(
-    all(miri, target_os = "windows"),
-    ignore = "miri does not support panicking on windows rust-lang/miri#1059"
-)]
 fn bad_exactsizeiterator() {
     struct Iter<'a> {
         counter: &'a AtomicUsize,
@@ -72,6 +68,7 @@ fn bad_exactsizeiterator() {
     assert_eq!(*counter.get_mut(), 0);
 }
 
+#[allow(dead_code)]
 struct S(u8);
 
 unsafe impl SliceDst for S {
@@ -85,10 +82,6 @@ unsafe impl SliceDst for S {
 }
 
 #[test]
-#[cfg_attr(
-    all(miri, target_os = "windows"),
-    ignore = "miri does not support panicking on windows rust-lang/miri#1059"
-)]
 fn panic_in_init() {
     // This relies on miri to catch leaks
     let _ = std::panic::catch_unwind(|| {
