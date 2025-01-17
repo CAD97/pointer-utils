@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["erase"],"struct":["Thin"],"trait":["Erasable","ErasablePtr"],"type":["ErasedPtr"]};

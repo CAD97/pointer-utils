@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Enum16","Enum2","Enum4","Enum8"],"struct":["Builder16","Builder2","Builder4","Builder8","Union16","Union2","Union4","Union8"]};

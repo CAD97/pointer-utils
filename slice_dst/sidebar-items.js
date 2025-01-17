@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["alloc_slice_dst","alloc_slice_dst_in"],"struct":["SliceWithHeader","StrWithHeader"],"trait":["AllocSliceDst","SliceDst","TryAllocSliceDst"]};

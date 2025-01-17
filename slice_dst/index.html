@@ -1,0 +1,96 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Support for custom slice-based DSTs."><title>slice_dst - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-46132b98.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="slice_dst" data-themes="" data-resource-suffix="" data-rustdoc-version="1.85.0-beta.2 (fe9b9751f 2025-01-11)" data-channel="beta" data-search-js="search-75f5ac3e.js" data-settings-js="settings-0f613d39.js" ><script src="../static.files/storage-59e33391.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../slice_dst/index.html">slice_<wbr>dst</a><span class="version">1.6.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a></li><li><a href="#but-how" title="But how?">But how?</a></li></ul><h3><a href="#structs">Crate Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#traits" title="Traits">Traits</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>slice_dst</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/slice_dst/lib.rs.html#1-385">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Support for custom slice-based DSTs.</p>
+<p>By handling allocation manually, we can manually allocate the <code>Box</code> for a custom DST.
+So long as the size lines up with what it should be, once the metadata is created,
+Rust actually already handles the DSTs it already supports perfectly well, safely!
+Setting them up is the hard part, which this crate handles for you.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<p>We have a tree structure! Each node holds some data and its children array.
+In normal Rust, you would probably typically implement it something like this:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">struct </span>Node {
+    data: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str,
+    children: Vec&lt;Arc&lt;Node&gt;&gt;,
+}
+
+<span class="kw">let </span>a = Node { data: <span class="string">"a"</span>, children: <span class="macro">vec!</span>[] };
+<span class="kw">let </span>b = Node { data: <span class="string">"b"</span>, children: <span class="macro">vec!</span>[] };
+<span class="kw">let </span>c = Node { data: <span class="string">"c"</span>, children: <span class="macro">vec!</span>[] };
+<span class="kw">let </span>abc = Node { data: <span class="string">"abc"</span>, children: <span class="macro">vec!</span>[a.into(), b.into(), c.into()] };</code></pre></div>
+<p>With this setup, the memory layout looks vaguely like the following diagram:</p>
+<div class="example-wrap"><pre class="language-text"><code>                                             +--------------+
+                                             |Node          |
+                                       +----&gt;|data: &quot;a&quot;     |
++------------+    +---------------+    |     |children: none|
+|Node        |    |Vec&lt;Arc&lt;Node&gt;&gt; |    |     +--------------+
+|data: &quot;abc&quot; |    |[0]: +--------------+     |Node          |
+|children: +-----&gt;|[1]: +-------------------&gt;|data: &quot;b&quot;     |
++------------+    |[2]: +--------------+     |children: none|
+                  +---------------|    |     +--------------+
+                                       |     |Node          |
+                                       +----&gt;|data: &quot;c&quot;     |
+                                             |children: none|
+                                             +--------------+</code></pre></div>
+<p>With this crate, however, the children array can be stored inline with the node’s data:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">struct </span>Node(Arc&lt;SliceWithHeader&lt;<span class="kw-2">&amp;</span><span class="lifetime">'static </span>str, Node&gt;&gt;);
+
+<span class="kw">let </span>a = Node(SliceWithHeader::new(<span class="string">"a"</span>, <span class="prelude-val">None</span>));
+<span class="kw">let </span>b = Node(SliceWithHeader::new(<span class="string">"b"</span>, <span class="prelude-val">None</span>));
+<span class="kw">let </span>c = Node(SliceWithHeader::new(<span class="string">"c"</span>, <span class="prelude-val">None</span>));
+<span class="comment">// this vec is just an easy way to get an ExactSizeIterator
+</span><span class="kw">let </span>abc = Node(SliceWithHeader::new(<span class="string">"abc"</span>, <span class="macro">vec!</span>[a, b, c]));</code></pre></div>
+<div class="example-wrap"><pre class="language-text"><code>                         +-----------+
++-------------+          |Node       |
+|Node         |    +----&gt;|length: 0  |
+|length: 3    |    |     |header: &quot;a&quot;|
+|header: &quot;abc&quot;|    |     +-----------+
+|slice: [0]: +-----+     |Node       |
+|       [1]: +----------&gt;|length: 0  |
+|       [2]: +-----+     |header: &quot;b&quot;|
++-------------+    |     +-----------+
+                   |     |Node       |
+                   +----&gt;|length: 0  |
+                         |header: &quot;c&quot;|
+                         +------------</code></pre></div>
+<p>The exact times you will want to use this rather than just standard types varries.
+This is mostly useful when space optimization is very important.
+This is still useful when using an arena: it reduces the allocations in the arena
+in exchange for moving node payloads to the heap alongside the children array.</p>
+<h2 id="but-how"><a class="doc-anchor" href="#but-how">§</a>But how?</h2>
+<p>This is possible because of the following key building blocks:</p>
+<ul>
+<li><code>Box</code>’s <a href="https://doc.rust-lang.org/stable/std/boxed/index.html#memory-layout">memory layout</a> is defined and uses the
+<a href="https://doc.rust-lang.org/stable/std/alloc/index.html#the-global_allocator-attribute">global allocator</a>, and is allowed to be manually allocated.</li>
+<li><a href="https://doc.rust-lang.org/stable/reference/type-layout.html#array-layout">Array layout</a> and <a href="https://doc.rust-lang.org/stable/reference/type-layout.html#slice-layout">slice layout</a> are defined.</li>
+<li><a href="https://doc.rust-lang.org/stable/reference/type-layout.html#reprc-structs"><code>#[repr(C)]</code></a> allows us to make compound types with defined layout.</li>
+<li>We can turn an opaque pointer into a slice fat pointer with
+<a href="https://doc.rust-lang.org/beta/core/ptr/fn.slice_from_raw_parts.html" title="fn core::ptr::slice_from_raw_parts"><code>ptr::slice_from_raw_parts</code></a>.</li>
+<li>We can cast a slice pointer to a pointer to our compound type
+in order to keep the correct fat pointer metadata.</li>
+</ul>
+<p>So with these guarantees, we can “just” manually allocate some space, initialize it
+for some custom <code>repr(C)</code> structure, and convert it into a <code>Box</code>. From that point,
+<code>Box</code> handles managing the memory, including deallocation or moving it into another
+smart pointer, such as <code>Arc</code>.</p>
+<p><a href="trait.SliceDst.html" title="trait slice_dst::SliceDst"><code>SliceDst</code></a> defines the capabilities required of the pointee type. It must be able to
+turn a trailing slice length into a <a href="https://doc.rust-lang.org/beta/core/alloc/layout/struct.Layout.html" title="struct core::alloc::layout::Layout"><code>Layout</code></a> for the whole pointee, and it must provide
+a way to turn a untyped slice pointer <code>*mut [()]</code> into a correctly typed pointer.</p>
+<p>The functions <a href="fn.alloc_slice_dst.html" title="fn slice_dst::alloc_slice_dst"><code>alloc_slice_dst</code></a> and <a href="fn.alloc_slice_dst_in.html" title="fn slice_dst::alloc_slice_dst_in"><code>alloc_slice_dst_in</code></a> provide a way
+to allocate space for a <code>SliceDst</code> type via the global allocator.</p>
+<p><a href="trait.AllocSliceDst.html" title="trait slice_dst::AllocSliceDst"><code>AllocSliceDst</code></a> types are owning heap pointers that can create a new slice DST.
+They take an initialization routine that is responsible for initializing the
+uninitialized allocated place, and do the ceremony required to allocate the place
+and turn it into the proper type by delgating to <code>SliceDst</code> and <code>alloc_slice_dst</code>.
+They also handle panic/unwind safety of the initialization routine and prevent
+leaking of the allocated place due to an initialization panic.</p>
+<p><a href="trait.TryAllocSliceDst.html" title="trait slice_dst::TryAllocSliceDst"><code>TryAllocSliceDst</code></a> is the potentially fallible initialization version.</p>
+<p>All of these pieces are the glue, but <a href="struct.SliceWithHeader.html" title="struct slice_dst::SliceWithHeader"><code>SliceWithHeader</code></a> and <a href="struct.StrWithHeader.html" title="struct slice_dst::StrWithHeader"><code>StrWithHeader</code></a>
+put the pieces together into a safe package. They take a header and an iterator
+(or copyable slice) and put together all of the pieces to allocate a dynamically
+sized custom type.</p>
+<p>Additionaly, though not strictly required, these types store the slice length inline.
+This gives them the ability to reconstruct pointers from fully type erased pointers
+via the <a href="../erasable/trait.Erasable.html" title="trait erasable::Erasable"><code>Erasable</code></a> trait
+.</p>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.SliceWithHeader.html" title="struct slice_dst::SliceWithHeader">Slice<wbr>With<wbr>Header</a></div><div class="desc docblock-short">A custom slice-based DST.</div></li><li><div class="item-name"><a class="struct" href="struct.StrWithHeader.html" title="struct slice_dst::StrWithHeader">StrWith<wbr>Header</a></div><div class="desc docblock-short">A custom str-based DST.</div></li></ul><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="trait" href="trait.AllocSliceDst.html" title="trait slice_dst::AllocSliceDst">Alloc<wbr>Slice<wbr>Dst</a></div><div class="desc docblock-short">Types that can allocate a custom slice DST within them.</div></li><li><div class="item-name"><a class="trait" href="trait.SliceDst.html" title="trait slice_dst::SliceDst">Slice<wbr>Dst</a></div><div class="desc docblock-short">A custom slice-based dynamically sized type.</div></li><li><div class="item-name"><a class="trait" href="trait.TryAllocSliceDst.html" title="trait slice_dst::TryAllocSliceDst">TryAlloc<wbr>Slice<wbr>Dst</a></div><div class="desc docblock-short">Types that can allocate a custom slice DST within them,
+given a fallible initialization function.</div></li></ul><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="fn" href="fn.alloc_slice_dst.html" title="fn slice_dst::alloc_slice_dst">alloc_<wbr>slice_<wbr>dst</a></div><div class="desc docblock-short">Allocate a slice-based DST with the <a href="https://doc.rust-lang.org/beta/alloc/alloc/fn.alloc.html" title="fn alloc::alloc::alloc">global allocator</a>.</div></li><li><div class="item-name"><a class="fn" href="fn.alloc_slice_dst_in.html" title="fn slice_dst::alloc_slice_dst_in">alloc_<wbr>slice_<wbr>dst_<wbr>in</a></div><div class="desc docblock-short">Allocate a slice-based DST with the <a href="https://doc.rust-lang.org/beta/alloc/alloc/fn.alloc.html" title="fn alloc::alloc::alloc">global allocator</a> within some container.</div></li></ul></section></div></main></body></html>

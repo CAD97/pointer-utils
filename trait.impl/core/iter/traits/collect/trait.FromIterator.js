@@ -1,0 +1,9 @@
+(function() {
+    var implementors = Object.fromEntries([["erasable",[["impl&lt;P, A&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/beta/core/iter/traits/collect/trait.FromIterator.html\" title=\"trait core::iter::traits::collect::FromIterator\">FromIterator</a>&lt;A&gt; for <a class=\"struct\" href=\"erasable/struct.Thin.html\" title=\"struct erasable::Thin\">Thin</a>&lt;P&gt;<div class=\"where\">where\n    P: <a class=\"trait\" href=\"https://doc.rust-lang.org/beta/core/iter/traits/collect/trait.FromIterator.html\" title=\"trait core::iter::traits::collect::FromIterator\">FromIterator</a>&lt;A&gt; + <a class=\"trait\" href=\"erasable/trait.ErasablePtr.html\" title=\"trait erasable::ErasablePtr\">ErasablePtr</a>,</div>"]]],["rc_box",[["impl&lt;T&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/beta/core/iter/traits/collect/trait.FromIterator.html\" title=\"trait core::iter::traits::collect::FromIterator\">FromIterator</a>&lt;T&gt; for <a class=\"struct\" href=\"rc_box/struct.ArcBox.html\" title=\"struct rc_box::ArcBox\">ArcBox</a>&lt;<a class=\"primitive\" href=\"https://doc.rust-lang.org/beta/core/primitive.slice.html\">[T]</a>&gt;"],["impl&lt;T&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/beta/core/iter/traits/collect/trait.FromIterator.html\" title=\"trait core::iter::traits::collect::FromIterator\">FromIterator</a>&lt;T&gt; for <a class=\"struct\" href=\"rc_box/struct.RcBox.html\" title=\"struct rc_box::RcBox\">RcBox</a>&lt;<a class=\"primitive\" href=\"https://doc.rust-lang.org/beta/core/primitive.slice.html\">[T]</a>&gt;"]]]]);
+    if (window.register_implementors) {
+        window.register_implementors(implementors);
+    } else {
+        window.pending_implementors = implementors;
+    }
+})()
+//{"start":57,"fragment_lengths":[685,842]}
