@@ -3,6 +3,17 @@ by storing the tag in the alignment bits.
 
 ## Changelist
 
+### 2.3.0
+#### Fixed
+
+- Cloning a pointer that resulted in a lower alignment no longer unsoundly
+  assumes it has greater alignment than it does. Cloning `Union*` now checks
+  alignment and panics if it is insufficient.
+
+#### Changed
+
+- Updated MSRV to 1.80.
+
 ### 2.2.2
 #### Fixed
 
@@ -62,8 +73,7 @@ This will ensure that the inner types are properly dropped instead of leaking.
 
 ## Minimum Supported Rust Version
 
-We require a minimum Rust version of 1.41.0.
-This is for an adjustment of local trait impl checking.
+We require a minimum Rust version of 1.80.0.
 
 Minimum version support is only guaranteed with minimal version resolution
 (`-Z minimal-versions`/`--minimal-versions`) due to how dependencies are handled.

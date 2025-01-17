@@ -18,6 +18,10 @@ There are two main useful reasons to type erase pointers in Rust:
 
 ## Changelist
 
+### 1.3.0
+#### Changed
+- Updated MSRV to 1.80
+
 ### 1.2.0
 #### Added
 - `impl ErasablePtr for Thin<P>`: the obvious impl; `Thin` is erased internally
@@ -82,8 +86,7 @@ I'd love to remove this hack if it turns out unnecessary after all
 
 ## Minimum Supported Rust Version
 
-We require a minimum Rust version of 1.41.0.
-This is for an adjustment of local trait impl checking.
+We require a minimum Rust version of 1.80.0.
 
 Minimum version support is only guaranteed with minimal version resolution
 (`-Z minimal-versions`/`--minimal-versions`) due to how dependencies are handled.
