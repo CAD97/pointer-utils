@@ -37,7 +37,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install arbitrary nightly toolchain
-        uses: dtolnay/rust-toolchain@1.80
+        uses: dtolnay/rust-toolchain@master
         with:
           toolchain: nightly-2025-01-01
 
@@ -66,6 +66,8 @@ jobs:
 
       - name: Install toolchain
         uses: dtolnay/rust-toolchain@1.84
+        with:
+          components: rustfmt
 
       - name: Check formatting
         run: cargo fmt --all -- --check
