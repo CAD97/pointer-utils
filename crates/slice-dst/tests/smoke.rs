@@ -39,6 +39,131 @@ fn actual_zst() {
     }
 }
 
+#[test]
+fn str_eq_cmp() {
+    [
+        [("*", "AB"), ("*", "ab")],
+        [("*", "AB"), ("*", "a")],
+        [("*", "A"), ("*", "ab")],
+        [("A", "*"), ("a", "*")],
+        [("a", "*"), ("A", "*")],
+        [("AB", "*"), ("a", "*")],
+        [("A", "*"), ("ab", "*")],
+    ]
+    .iter()
+    .for_each(|[lt @ (lh, ls), rt @ (rh, rs)]| {
+        let l: Box<StrWithHeader<&str>> = StrWithHeader::new(*lh, ls);
+        let r: Box<StrWithHeader<&str>> = StrWithHeader::new(*rh, rs);
+
+        assert_eq!(l, l);
+        assert_eq!(r, r);
+
+        assert_ne!(l, r);
+        assert_ne!(r, l);
+
+        assert_eq!(l <= l, lt <= lt, "{lt:?} <= {lt:?}");
+        assert_eq!(l >= l, lt >= lt, "{lt:?} >= {lt:?}");
+
+        assert_eq!(l < l, lt < lt, "{lt:?} < {lt:?}");
+        assert_eq!(l > l, lt > lt, "{lt:?} > {lt:?}");
+
+        assert_eq!(r <= r, rt <= rt, "{rt:?} <= {rt:?}");
+        assert_eq!(r >= r, rt >= rt, "{rt:?} >= {rt:?}");
+
+        assert_eq!(r < r, rt < rt, "{rt:?} < {rt:?}");
+        assert_eq!(r > r, rt > rt, "{rt:?} > {rt:?}");
+
+        assert_eq!(l < r, lt < rt, "{lt:?} < {rt:?}");
+        assert_eq!(r > l, rt > lt, "{rt:?} > {lt:?}");
+    })
+}
+
+#[test]
+fn slice_eq_cmp() {
+    [
+        [(0, &[0, 0][..]), (1, &[0, 0][..])],
+        [(1, &[0, 0][..]), (0, &[0, 0][..])],
+        [(0, &[0][..]), (0, &[0, 0][..])],
+        [(0, &[0, 0][..]), (0, &[0][..])],
+        [(0, &[1, 2][..]), (0, &[10, 20][..])],
+    ]
+    .iter()
+    .for_each(|[lt @ (lh, ls), rt @ (rh, rs)]| {
+        let l: Box<SliceWithHeader<i32, i32>> = SliceWithHeader::from_slice(*lh, ls);
+        let r: Box<SliceWithHeader<i32, i32>> = SliceWithHeader::from_slice(*rh, rs);
+
+        assert_eq!(l, l);
+        assert_eq!(r, r);
+
+        assert_ne!(l, r);
+        assert_ne!(r, l);
+
+        assert_eq!(l <= l, lt <= lt, "{lt:?} <= {lt:?}");
+        assert_eq!(l >= l, lt >= lt, "{lt:?} >= {lt:?}");
+
+        assert_eq!(l < l, lt < lt, "{lt:?} < {lt:?}");
+        assert_eq!(l > l, lt > lt, "{lt:?} > {lt:?}");
+
+        assert_eq!(r <= r, rt <= rt, "{rt:?} <= {rt:?}");
+        assert_eq!(r >= r, rt >= rt, "{rt:?} >= {rt:?}");
+
+        assert_eq!(r < r, rt < rt, "{rt:?} < {rt:?}");
+        assert_eq!(r > r, rt > rt, "{rt:?} > {rt:?}");
+
+        assert_eq!(l < r, lt < rt, "{lt:?} < {rt:?}");
+        assert_eq!(r > l, rt > lt, "{rt:?} > {lt:?}");
+    })
+}
+
+#[test]
+fn slice_partial_eq_cmp() {
+    [
+        [(0.0, &[0.0, 0.0][..]), (1.0, &[0.0, 0.0][..])],
+        [(1.0, &[0.0, 0.0][..]), (0.0, &[0.0, 0.0][..])],
+        [(0.0, &[0.0][..]), (0.0, &[0.0, 0.0][..])],
+        [(0.0, &[0.0, 0.0][..]), (0.0, &[0.0][..])],
+        [(0.0, &[1.0, 2.0][..]), (0.0, &[10.0, 20.0][..])],
+    ]
+    .iter()
+    .for_each(|[lt @ (lh, ls), rt @ (rh, rs)]| {
+        let l: Box<SliceWithHeader<f32, f32>> = SliceWithHeader::from_slice(*lh, ls);
+        let r: Box<SliceWithHeader<f32, f32>> = SliceWithHeader::from_slice(*rh, rs);
+
+        assert_eq!(l, l);
+        assert_eq!(r, r);
+
+        assert_ne!(l, r);
+        assert_ne!(r, l);
+
+        assert_eq!(l <= l, lt <= lt, "{lt:?} <= {lt:?}");
+        assert_eq!(l >= l, lt >= lt, "{lt:?} >= {lt:?}");
+
+        assert_eq!(l < l, lt < lt, "{lt:?} < {lt:?}");
+        assert_eq!(l > l, lt > lt, "{lt:?} > {lt:?}");
+
+        assert_eq!(r <= r, rt <= rt, "{rt:?} <= {rt:?}");
+        assert_eq!(r >= r, rt >= rt, "{rt:?} >= {rt:?}");
+
+        assert_eq!(r < r, rt < rt, "{rt:?} < {rt:?}");
+        assert_eq!(r > r, rt > rt, "{rt:?} > {rt:?}");
+
+        assert_eq!(l < r, lt < rt, "{lt:?} < {rt:?}");
+        assert_eq!(r > l, rt > lt, "{rt:?} > {lt:?}");
+    })
+}
+
+const fn is_partial_ord<T: ?Sized + PartialOrd>() {}
+const fn is_ord<T: ?Sized + Ord>() {}
+
+// compile-time check that PartialOrd/Ord is correctly derived
+const _: () = is_partial_ord::<SliceWithHeader<f64, f64>>();
+const _: () = is_partial_ord::<SliceWithHeader<f64, u64>>();
+const _: () = is_partial_ord::<SliceWithHeader<u64, f64>>();
+const _: () = is_ord::<SliceWithHeader<u64, u64>>();
+
+const _: () = is_partial_ord::<StrWithHeader<f64>>();
+const _: () = is_ord::<StrWithHeader<u64>>();
+
 type Data = usize;
 #[repr(transparent)]
 #[derive(Debug, Clone)]

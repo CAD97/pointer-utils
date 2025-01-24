@@ -1,3 +1,5 @@
+use core::cmp::Ordering;
+
 use super::*;
 
 #[repr(C)]
@@ -175,6 +177,26 @@ unsafe impl<Header, Item> Erasable for SliceWithHeader<Header, Item> {
     const ACK_1_1_0: bool = true;
 }
 
+impl<Header, Item> PartialOrd for SliceWithHeader<Header, Item>
+where
+    Header: PartialOrd,
+    Item: PartialOrd,
+{
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        (&self.header, &self.slice).partial_cmp(&(&other.header, &other.slice))
+    }
+}
+
+impl<Header, Item> Ord for SliceWithHeader<Header, Item>
+where
+    Header: Ord,
+    Item: Ord,
+{
+    fn cmp(&self, other: &Self) -> Ordering {
+        (&self.header, &self.slice).cmp(&(&other.header, &other.slice))
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Eq, PartialEq, Hash)]
 /// A custom str-based DST.
@@ -247,4 +269,22 @@ unsafe impl<Header> Erasable for StrWithHeader<Header> {
     }
 
     const ACK_1_1_0: bool = true;
+}
+
+impl<Header> PartialOrd for StrWithHeader<Header>
+where
+    Header: PartialOrd,
+{
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        (&self.header, &self.str).partial_cmp(&(&other.header, &other.str))
+    }
+}
+
+impl<Header> Ord for StrWithHeader<Header>
+where
+    Header: Ord,
+{
+    fn cmp(&self, other: &Self) -> Ordering {
+        (&self.header, &self.str).cmp(&(&other.header, &other.str))
+    }
 }
