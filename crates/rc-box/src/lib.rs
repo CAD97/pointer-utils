@@ -8,6 +8,10 @@
 //! With the standard library types, you would use `get_mut` and have to handle the impossible
 //! case where the value was shared. With the known unique versions, you have [`DerefMut`],
 //! so it's as simple as mutating behind a [`Box`].
+//!
+//! Also note that `RcBox`, unlike `Rc`, implements `Send` and `Sync`. An `RcBox` can be sent to
+//! another thread or stored in a shared collection, and then converted to an `Rc` for optimal
+//! single-threaded use. This works for `Rc<RefCell<T>` as well, since `RefCell` is `Send`.
 
 #![warn(missing_docs, missing_debug_implementations)]
 #![no_std]
